@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1a1a2e">
+  <title>Apt Hunter</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f1a;
+      --surface: #1a1a2e;
+      --surface2: #16213e;
+      --accent: #0f3460;
+      --green: #25d366;
+      --green-dark: #1da851;
+      --text: #e8e8f0;
+      --text-muted: #8888aa;
+      --border: #2a2a4a;
+      --error: #ff4757;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      padding: 16px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .card-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .api-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input[type="password"], input[type="text"] {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.9rem;
+      padding: 10px 12px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="password"]:focus, input[type="text"]:focus {
+      border-color: #4a4a8a;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 10px 16px;
+      transition: opacity 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-primary {
+      background: #4a4acf;
+      color: #fff;
+    }
+
+    .btn-ghost {
+      background: var(--surface2);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .capture-zone {
+      position: relative;
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      background: var(--surface2);
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      overflow: hidden;
+    }
+
+    .capture-zone:hover { border-color: #4a4acf; }
+    .capture-zone.has-image { border-style: solid; }
+
+    .capture-zone img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      max-height: 360px;
+    }
+
+    .capture-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .capture-zone.has-image:hover .capture-overlay { opacity: 1; }
+
+    .capture-icon {
+      font-size: 2.5rem;
+      line-height: 1;
+    }
+
+    .capture-hint {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-analyze {
+      background: #4a4acf;
+      color: #fff;
+      width: 100%;
+      padding: 13px;
+      font-size: 1rem;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Results */
+    .results { display: none; }
+    .results.visible { display: block; }
+
+    .listing-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .listing-item {
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .listing-item-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .listing-item-value {
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+
+    .phone-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(37,211,102,0.12);
+      border: 1px solid rgba(37,211,102,0.3);
+      color: var(--green);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin: 2px;
+    }
+
+    .wa-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--green);
+      color: #fff;
+      text-decoration: none;
+      border-radius: var(--radius);
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-weight: 700;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .wa-btn:hover { background: var(--green-dark); }
+    .wa-btn:active { transform: scale(0.98); }
+
+    .wa-icon {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .message-box {
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border-left: 3px solid var(--green);
+    }
+
+    .multi-contact {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* Multi-number cards */
+    .phone-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .phone-card-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .phone-card-number {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--green);
+    }
+
+    .phone-card-meta {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .phone-card-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: var(--green);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      padding: 9px 14px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .phone-card-btn:hover { background: var(--green-dark); }
+    .phone-card-btn:active { transform: scale(0.97); }
+
+    /* Column-layout card (used when CC picker is shown) */
+    .phone-card-col {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    /* Country-code picker row */
+    .cc-picker-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      width: 100%;
+      margin-top: 4px;
+    }
+
+    .cc-select {
+      background: var(--accent);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.85rem;
+      padding: 7px 8px;
+      cursor: pointer;
+      outline: none;
+      flex-shrink: 0;
+    }
+
+    .cc-other-input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.85rem;
+      padding: 7px 8px;
+      width: 72px;
+      outline: none;
+    }
+
+    .cc-confirm-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 13px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .cc-confirm-btn:hover { background: var(--green-dark); }
+    .cc-confirm-btn:active { transform: scale(0.97); }
+
+    .error-box {
+      background: rgba(255,71,87,0.1);
+      border: 1px solid rgba(255,71,87,0.3);
+      border-radius: 8px;
+      color: var(--error);
+      padding: 12px;
+      font-size: 0.88rem;
+      display: none;
+    }
+
+    .error-box.visible { display: block; }
+
+    /* Hidden file inputs */
+    #fileCamera, #fileUpload { display: none; }
+
+    /* Label wrapper so native click reaches the input without JS */
+    .capture-label {
+      display: block;
+      cursor: pointer;
+    }
+    .capture-label input[type="file"] {
+      display: none;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #2a2a4a;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      pointer-events: none;
+      transition: transform 0.3s ease;
+      z-index: 999;
+    }
+
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 400px) {
+      body { padding: 12px; }
+      h1 { font-size: 1.3rem; }
+    }
+
+    /* ── View tabs ─────────────────────────────────────────────────────────── */
+    .view-tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 20px;
+    }
+
+    .view-tab {
+      flex: 1;
+      border: none;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 9px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .view-tab.active { background: #4a4acf; color: #fff; }
+
+    /* ── Archive view ──────────────────────────────────────────────────────── */
+    #archiveView { display: none; }
+    #archiveView.visible { display: block; }
+
+    .archive-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      gap: 8px;
+    }
+
+    .archive-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .btn-csv {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 7px 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+
+    .btn-csv:hover { background: var(--accent); }
+
+    .archive-empty {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      padding: 48px 0;
+      line-height: 1.8;
+    }
+
+    .archive-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .archive-card-top {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+    }
+
+    .archive-thumb {
+      width: 72px;
+      height: 72px;
+      object-fit: cover;
+      border-radius: 8px;
+      flex-shrink: 0;
+      background: var(--surface2);
+    }
+
+    .archive-thumb-placeholder {
+      width: 72px;
+      height: 72px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      background: var(--surface2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+    }
+
+    .archive-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .archive-date { font-size: 0.72rem; color: var(--text-muted); }
+
+    .archive-detail {
+      font-size: 0.88rem;
+      line-height: 1.4;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .archive-phones { font-size: 0.8rem; color: var(--green); }
+
+    .archive-contacted { font-size: 0.78rem; color: var(--text-muted); }
+    .archive-contacted span { color: var(--text); font-weight: 500; }
+
+    /* Property detail fields grid */
+    .archive-fields {
+      border-top: 1px solid var(--border);
+      padding: 10px 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px 10px;
+    }
+
+    .archive-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .archive-field.wide {
+      grid-column: 1 / -1;
+    }
+
+    .archive-field-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    .archive-field-input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.85rem;
+      font-family: inherit;
+      padding: 5px 8px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s;
+      /* remove number spinner arrows for cleanliness */
+      -moz-appearance: textfield;
+    }
+
+    .archive-field-input[type="number"]::-webkit-inner-spin-button,
+    .archive-field-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+    .archive-field-input:focus { border-color: #4a4a8a; }
+
+    .archive-card-bottom {
+      border-top: 1px solid var(--border);
+      padding: 8px 12px 10px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    .archive-notes {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 0.85rem;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      min-height: 34px;
+      line-height: 1.5;
+    }
+
+    .archive-notes::placeholder { color: var(--text-muted); }
+
+    .btn-delete {
+      background: transparent;
+      border: 1px solid rgba(255,71,87,0.3);
+      border-radius: 6px;
+      color: var(--error);
+      font-size: 0.8rem;
+      padding: 5px 9px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+
+    .btn-delete:hover { background: rgba(255,71,87,0.12); }
+  </style>
+</head>
+<body>
+
+  <h1>🏠 Apt Hunter</h1>
+  <p class="subtitle">Fotografía un letrero y genera tu mensaje de WhatsApp al instante.</p>
+
+  <!-- View toggle -->
+  <div class="view-tabs">
+    <button class="view-tab active" id="tabScan">📷 Escanear</button>
+    <button class="view-tab" id="tabArchive">🗂 Archivo</button>
+  </div>
+
+  <!-- ── Scan view ──────────────────────────────────────────────────────── -->
+  <div id="scanView">
+
+  <!-- API Key -->
+  <div class="card">
+    <div class="card-label">Anthropic API Key</div>
+    <div class="api-row">
+      <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
+      <button class="btn btn-ghost" id="saveKey">Guardar</button>
+    </div>
+  </div>
+
+  <!-- Photo capture -->
+  <div class="card">
+    <div class="card-label">Foto del letrero</div>
+    <label class="capture-label" id="captureLabel">
+      <input type="file" id="fileUpload" accept="image/*">
+      <div class="capture-zone" id="captureZone">
+        <div class="capture-icon">📷</div>
+        <div class="capture-hint">Toca para subir foto</div>
+        <div class="capture-overlay">
+          <div class="capture-icon">🔄</div>
+          <div style="color:#fff;font-size:0.85rem;">Cambiar foto</div>
+        </div>
+      </div>
+    </label>
+    <div class="btn-row" style="margin-top:10px;">
+      <label class="btn btn-ghost" style="cursor:pointer;">
+        <input type="file" id="fileCamera" accept="image/*" capture="environment" style="display:none;">
+        📷 Cámara
+      </label>
+      <button class="btn btn-ghost" id="btnClear" style="display:none;">✕ Limpiar</button>
+    </div>
+  </div>
+
+  <!-- Analyze -->
+  <button class="btn btn-analyze" id="btnAnalyze" disabled>Analizar letrero</button>
+
+  <!-- Error -->
+  <div class="error-box" id="errorBox"></div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+
+    <div class="card">
+      <div class="card-label">Información extraída</div>
+      <div class="listing-grid" id="listingGrid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Mensaje generado</div>
+      <div class="message-box" id="messageBox"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Abrir en WhatsApp</div>
+      <div class="multi-contact" id="contactLinks"></div>
+    </div>
+
+  </div>
+
+  </div><!-- /scanView -->
+
+  <!-- ── Archive view ──────────────────────────────────────────────────── -->
+  <div id="archiveView">
+    <div class="archive-header">
+      <span class="archive-title" id="archiveTitle">Archivo</span>
+      <button class="btn-csv" id="btnCsv">⬇ Descargar CSV</button>
+    </div>
+    <div id="archiveList"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  let imageBase64 = null;
+  let imageMime = 'image/jpeg';
+  let currentResult = null;
+  let currentThumbnail = null;
+
+  // ── Elements ───────────────────────────────────────────────────────────────
+  const apiKeyEl    = document.getElementById('apiKey');
+  const saveKeyBtn  = document.getElementById('saveKey');
+  const captureZone = document.getElementById('captureZone');
+  const captureLabel= document.getElementById('captureLabel');
+  const btnClear    = document.getElementById('btnClear');
+  const fileCamera  = document.getElementById('fileCamera');
+  const fileUpload  = document.getElementById('fileUpload');
+  const btnAnalyze  = document.getElementById('btnAnalyze');
+  const errorBox    = document.getElementById('errorBox');
+  const resultsEl   = document.getElementById('results');
+  const listingGrid = document.getElementById('listingGrid');
+  const messageBox  = document.getElementById('messageBox');
+  const contactLinks= document.getElementById('contactLinks');
+  const toastEl     = document.getElementById('toast');
+  const tabScan     = document.getElementById('tabScan');
+  const tabArchive  = document.getElementById('tabArchive');
+  const scanView    = document.getElementById('scanView');
+  const archiveView = document.getElementById('archiveView');
+  const archiveList = document.getElementById('archiveList');
+  const archiveTitle= document.getElementById('archiveTitle');
+  const btnCsv      = document.getElementById('btnCsv');
+
+  // ── Storage helper (fails gracefully in sandboxed iframes) ────────────────
+  const store = {
+    get: k => { try { return localStorage.getItem(k); } catch { return null; } },
+    set: (k, v) => { try { localStorage.setItem(k, v); return true; } catch { return false; } }
+  };
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  const savedKey = store.get('apt_hunter_api_key');
+  if (savedKey) apiKeyEl.value = savedKey;
+
+  // ── API Key ────────────────────────────────────────────────────────────────
+  saveKeyBtn.addEventListener('click', () => {
+    const k = apiKeyEl.value.trim();
+    if (!k) return showToast('Ingresa una API key primero');
+    store.set('apt_hunter_api_key', k);
+    showToast('API key guardada ✓');
+  });
+
+  apiKeyEl.addEventListener('keydown', e => { if (e.key === 'Enter') saveKeyBtn.click(); });
+
+  // ── Photo ──────────────────────────────────────────────────────────────────
+  btnClear.addEventListener('click', clearImage);
+
+  fileCamera.addEventListener('change', e => handleFile(e.target.files[0]));
+  fileUpload.addEventListener('change', e => handleFile(e.target.files[0]));
+
+  // Drag & drop
+  captureZone.addEventListener('dragover', e => { e.preventDefault(); captureZone.style.borderColor = '#4a4acf'; });
+  captureZone.addEventListener('dragleave', () => { captureZone.style.borderColor = ''; });
+  captureZone.addEventListener('drop', e => {
+    e.preventDefault();
+    captureZone.style.borderColor = '';
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+  });
+
+  function handleFile(file) {
+    if (!file || !file.type.startsWith('image/')) return showError('Selecciona una imagen válida.');
+    imageMime = file.type;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const dataUrl = ev.target.result;
+      imageBase64 = dataUrl.split(',')[1];
+      // Generate thumbnail (max 200px wide)
+      const tImg = new Image();
+      tImg.onload = () => {
+        const MAX_W = 200;
+        const scale = Math.min(1, MAX_W / tImg.width);
+        const tc = document.createElement('canvas');
+        tc.width  = Math.round(tImg.width  * scale);
+        tc.height = Math.round(tImg.height * scale);
+        tc.getContext('2d').drawImage(tImg, 0, 0, tc.width, tc.height);
+        currentThumbnail = tc.toDataURL('image/jpeg', 0.75);
+      };
+      tImg.src = dataUrl;
+      // Show preview
+      captureZone.innerHTML = `
+        <img src="${dataUrl}" alt="preview">
+        <div class="capture-overlay">
+          <div class="capture-icon">🔄</div>
+          <div style="color:#fff;font-size:0.85rem;">Cambiar foto</div>
+        </div>`;
+      captureZone.classList.add('has-image');
+      btnClear.style.display = '';
+      btnAnalyze.disabled = false;
+      hideError();
+      resultsEl.classList.remove('visible');
+    };
+    reader.readAsDataURL(file);
+    // Reset file inputs so same file can be reselected
+    fileCamera.value = '';
+    fileUpload.value = '';
+  }
+
+  function clearImage() {
+    imageBase64 = null;
+    currentThumbnail = null;
+    currentResult = null;
+    captureZone.innerHTML = `
+      <div class="capture-icon">📷</div>
+      <div class="capture-hint">Toca para subir foto</div>
+      <div class="capture-overlay">
+        <div class="capture-icon">🔄</div>
+        <div style="color:#fff;font-size:0.85rem;">Cambiar foto</div>
+      </div>`;
+    captureZone.classList.remove('has-image');
+    btnClear.style.display = 'none';
+    btnAnalyze.disabled = true;
+    resultsEl.classList.remove('visible');
+    hideError();
+  }
+
+  // ── Analyze ────────────────────────────────────────────────────────────────
+  btnAnalyze.addEventListener('click', analyze);
+
+  async function analyze() {
+    const apiKey = apiKeyEl.value.trim() || store.get('apt_hunter_api_key') || '';
+    if (!apiKey) return showError('Ingresa y guarda tu Anthropic API key primero.');
+    if (!imageBase64) return showError('Primero sube o toma una foto.');
+
+    setLoading(true);
+    hideError();
+    resultsEl.classList.remove('visible');
+
+    const systemPrompt = `Eres un asistente experto en analizar letreros de apartamentos y propiedades en renta o venta.
+Extrae toda la información relevante del letrero en la imagen y devuelve ÚNICAMENTE un objeto JSON con exactamente esta estructura:
+{
+  "phones": [
+    {
+      "number": "dígitos del número según las dos reglas siguientes",
+      "position": "descripción de dónde aparece el número en el letrero, ej: 'texto grande', 'parte superior', 'parte inferior', 'texto pequeño'",
+      "label": "etiqueta o nombre que acompaña al número si existe, ej: 'Ventas', 'Info', 'WhatsApp', 'Cel', o null si no hay",
+      "countryCode": "ver reglas abajo"
+    }
+  ],
+  "type": "Renta | Venta | Renta y Venta | Desconocido",
+  "price": "precio si está visible, o null",
+  "rooms": "número de habitaciones si está visible, o null",
+  "address": "dirección o ubicación si está visible, o null",
+  "extras": "otras características relevantes (amueblado, estacionamiento, etc.), o null",
+  "contact_name": "nombre del contacto o agencia si aparece, o null",
+  "whatsapp_message": "mensaje corto y natural en español para enviar por WhatsApp preguntando por el inmueble. Máx 2 oraciones. Menciona el tipo (renta/venta), precio si está disponible, y que te interesa más información."
+}
+REGLAS ESTRICTAS para los campos de cada teléfono:
+
+REGLA A — 'countryCode': Solo ponlo si el letrero literalmente escribe un prefijo internacional con símbolo + o con "00" antes del número (ejemplos que SÍ cuentan: "+52", "+1", "0052", "001 55…"). Si el número en el letrero NO tiene + ni "00" antes, countryCode SIEMPRE es null, sin excepción. Los códigos de área (55, 33, 81, etc.) NO son códigos de país aunque coincidan con el código de algún país.
+
+REGLA B — 'number':
+  • Si countryCode NO es null: escribe SOLO los dígitos que vienen DESPUÉS del prefijo internacional. Ejemplo: letrero dice "+52 55 7919 0328" → countryCode="52", number="5579190328".
+  • Si countryCode es null: copia TODOS los dígitos del número exactamente como aparecen, sin quitar ni agregar nada. Ejemplo: letrero dice "55 7919 0328" → countryCode=null, number="5579190328".
+
+Si no hay números de teléfono visibles, devuelve phones como array vacío [].
+Solo responde con el JSON, sin texto adicional.`;
+
+    const payload = {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: [{
+        role: 'user',
+        content: [{
+          type: 'image',
+          source: {
+            type: 'base64',
+            media_type: imageMime,
+            data: imageBase64,
+          }
+        }, {
+          type: 'text',
+          text: 'Analiza este letrero de propiedad y extrae la información solicitada en JSON.'
+        }]
+      }]
+    };
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error?.message || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      const rawText = data?.content?.[0]?.text || '';
+
+      // Extract JSON (handle possible markdown fences)
+      const jsonMatch = rawText.match(/```json\s*([\s\S]*?)```/) || rawText.match(/```\s*([\s\S]*?)```/);
+      const jsonStr = jsonMatch ? jsonMatch[1] : rawText;
+      const result = JSON.parse(jsonStr.trim());
+
+      currentResult = result;
+      renderResults(result);
+    } catch (err) {
+      if (err instanceof SyntaxError) {
+        showError('No se pudo parsear la respuesta de la API. Intenta de nuevo.');
+      } else {
+        showError(`Error: ${err.message}`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // ── Render Results ─────────────────────────────────────────────────────────
+  function renderResults(r) {
+    // Listing grid
+    const fields = [
+      ['Tipo', r.type],
+      ['Precio', r.price],
+      ['Habitaciones', r.rooms],
+      ['Dirección', r.address],
+      ['Extras', r.extras],
+      ['Contacto', r.contact_name],
+    ].filter(([, v]) => v && v !== 'null');
+
+    // Normalize phone entries: handle both legacy string[] and new object[] format
+    const phones = (r.phones || [])
+      .filter(Boolean)
+      .map(p => typeof p === 'string' ? { number: p, position: null, label: null } : p);
+
+    listingGrid.innerHTML = '';
+
+    if (phones.length) {
+      const phoneEl = document.createElement('div');
+      phoneEl.className = 'listing-item';
+      phoneEl.innerHTML = `<div class="listing-item-label">Teléfonos</div>
+        <div>${phones.map(p => {
+          const meta = [p.label, p.position].filter(Boolean).join(' · ');
+          return `<span class="phone-chip">📞 ${escHtml(p.number)}${meta ? `<span style="opacity:0.7;font-size:0.8em"> · ${escHtml(meta)}</span>` : ''}</span>`;
+        }).join('')}</div>`;
+      listingGrid.appendChild(phoneEl);
+    }
+
+    fields.forEach(([label, value]) => {
+      const el = document.createElement('div');
+      el.className = 'listing-item';
+      el.innerHTML = `<div class="listing-item-label">${label}</div><div class="listing-item-value">${escHtml(value)}</div>`;
+      listingGrid.appendChild(el);
+    });
+
+    if (!listingGrid.children.length) {
+      listingGrid.innerHTML = '<div class="listing-item" style="color:var(--text-muted)">No se encontró información en el letrero.</div>';
+    }
+
+    // Message
+    messageBox.textContent = r.whatsapp_message || '(no generado)';
+
+    // WhatsApp links
+    contactLinks.innerHTML = '';
+
+    if (phones.length === 0) {
+      contactLinks.innerHTML = '<div style="color:var(--text-muted);font-size:0.88rem;">No se detectaron números de teléfono.</div>';
+    } else {
+      const isSingle = phones.length === 1;
+      phones.forEach(p => {
+        contactLinks.appendChild(buildPhoneItem(p, r.whatsapp_message || '', isSingle));
+      });
+    }
+
+    resultsEl.classList.add('visible');
+    resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ── Country-code helpers ───────────────────────────────────────────────────
+  const CC_PRESETS = [
+    { code: '52', flag: '🇲🇽', label: '+52 México' },
+    { code: '1',  flag: '🇺🇸', label: '+1 EE.UU./CA' },
+    { code: 'other', flag: '🌍', label: 'Otro…' },
+  ];
+
+  const WA_SVG_SM = `<svg style="width:16px;height:16px;flex-shrink:0" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
+
+  const WA_SVG_LG = `<svg class="wa-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
+
+  function buildWaNumber(localDigits, cc) {
+    return String(cc).replace(/\D/g, '') + String(localDigits).replace(/\D/g, '');
+  }
+
+  function getDefaultCC() {
+    return store.get('apt_hunter_last_cc') || '52';
+  }
+
+  function saveCC(cc) {
+    if (cc) store.set('apt_hunter_last_cc', cc);
+  }
+
+  // Build a full phone item (either a big button or a card with optional CC picker)
+  function buildPhoneItem(p, waMessage, isSingle) {
+    const localDigits = String(p.number || '').replace(/\D/g, '');
+    const metaParts   = [p.label, p.position].filter(Boolean);
+    const msg         = encodeURIComponent(waMessage);
+
+    // Helper: make the final wa.me anchor
+    // skipSave=true when the caller already handles the archive save (CC picker flow)
+    function makeWaLink(cc, bigBtn, skipSave = false) {
+      const waNum = buildWaNumber(localDigits, cc);
+      const href = `https://wa.me/${waNum}?text=${msg}`;
+      const a = document.createElement('a');
+      a.href = href;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      if (!skipSave) {
+        a.addEventListener('click', () => saveToArchive(waNum, p.number));
+      }
+      if (bigBtn) {
+        a.className = 'wa-btn';
+        a.innerHTML = `${WA_SVG_LG} WhatsApp · ${escHtml(p.number)}`;
+      } else {
+        a.className = 'phone-card-btn';
+        a.innerHTML = `${WA_SVG_SM} Enviar`;
+      }
+      return a;
+    }
+
+    if (p.countryCode) {
+      // Country code known from the sign → show link directly
+      if (isSingle) return makeWaLink(p.countryCode, true);
+      // Multi-number card
+      const card = document.createElement('div');
+      card.className = 'phone-card';
+      const info = document.createElement('div');
+      info.className = 'phone-card-info';
+      info.innerHTML = `<div class="phone-card-number">📞 ${escHtml(p.number)}</div>`
+        + (metaParts.length ? `<div class="phone-card-meta">${escHtml(metaParts.join(' · '))}</div>` : '');
+      card.appendChild(info);
+      card.appendChild(makeWaLink(p.countryCode, false));
+      return card;
+    }
+
+    // No country code detected → show CC picker card
+    const defaultCC = getDefaultCC();
+    const isCustomCC = defaultCC !== '52' && defaultCC !== '1';
+
+    const card = document.createElement('div');
+    card.className = 'phone-card phone-card-col';
+
+    const info = document.createElement('div');
+    info.className = 'phone-card-info';
+    info.innerHTML = `<div class="phone-card-number">📞 ${escHtml(p.number)}</div>`
+      + (metaParts.length ? `<div class="phone-card-meta">${escHtml(metaParts.join(' · '))}</div>` : '')
+      + `<div class="phone-card-meta" style="font-style:italic;margin-top:2px;">Selecciona el código de país</div>`;
+
+    // Select element
+    const select = document.createElement('select');
+    select.className = 'cc-select';
+    CC_PRESETS.forEach(({ code, flag, label }) => {
+      const opt = document.createElement('option');
+      opt.value = code;
+      opt.textContent = `${flag} ${label}`;
+      if (code === defaultCC || (isCustomCC && code === 'other')) opt.selected = true;
+      select.appendChild(opt);
+    });
+
+    // Text input for "Other"
+    const otherInput = document.createElement('input');
+    otherInput.type = 'text';
+    otherInput.className = 'cc-other-input';
+    otherInput.placeholder = 'ej. 34';
+    otherInput.style.display = isCustomCC ? '' : 'none';
+    if (isCustomCC) otherInput.value = defaultCC;
+
+    select.addEventListener('change', () => {
+      otherInput.style.display = select.value === 'other' ? '' : 'none';
+    });
+
+    // Confirm button
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'cc-confirm-btn';
+    confirmBtn.innerHTML = `${WA_SVG_SM} Abrir WhatsApp`;
+
+    confirmBtn.addEventListener('click', () => {
+      let cc = select.value;
+      if (cc === 'other') {
+        cc = otherInput.value.trim().replace(/\D/g, '');
+        if (!cc) { showToast('Ingresa un código de país válido'); return; }
+      }
+      saveCC(cc);
+      const waNum = buildWaNumber(localDigits, cc);
+      saveToArchive(waNum, p.number);
+      // Replace picker row with persistent link (no double-save on re-click)
+      const link = makeWaLink(cc, false, true);
+      pickerRow.replaceWith(link);
+      window.open(link.href, '_blank', 'noopener,noreferrer');
+    });
+
+    const pickerRow = document.createElement('div');
+    pickerRow.className = 'cc-picker-row';
+    pickerRow.appendChild(select);
+    pickerRow.appendChild(otherInput);
+    pickerRow.appendChild(confirmBtn);
+
+    card.appendChild(info);
+    card.appendChild(pickerRow);
+    return card;
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function setLoading(on) {
+    btnAnalyze.disabled = on;
+    btnAnalyze.innerHTML = on
+      ? '<span class="spinner"></span>Analizando…'
+      : 'Analizar letrero';
+  }
+
+  function showError(msg) {
+    errorBox.textContent = msg;
+    errorBox.classList.add('visible');
+  }
+
+  function hideError() {
+    errorBox.classList.remove('visible');
+  }
+
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    setTimeout(() => toastEl.classList.remove('show'), 2500);
+  }
+
+function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // ── View toggle ────────────────────────────────────────────────────────────
+  tabScan.addEventListener('click', () => {
+    tabScan.classList.add('active');
+    tabArchive.classList.remove('active');
+    scanView.style.display = '';
+    archiveView.classList.remove('visible');
+  });
+
+  tabArchive.addEventListener('click', () => {
+    tabArchive.classList.add('active');
+    tabScan.classList.remove('active');
+    scanView.style.display = 'none';
+    archiveView.classList.add('visible');
+    renderArchive();
+  });
+
+  btnCsv.addEventListener('click', exportCSV);
+
+  // ── Archive: persistence ────────────────────────────────────────────────────
+  function loadArchive() {
+    try { return JSON.parse(store.get('apt_hunter_archive') || '[]'); }
+    catch { return []; }
+  }
+
+  function saveToArchive(waNumber, displayNumber) {
+    if (!currentResult) return;
+    const archive = loadArchive();
+    const entry = {
+      id: Date.now(),
+      date: new Date().toISOString(),
+      thumbnail: currentThumbnail || null,
+      address:   currentResult.address || null,
+      type:      currentResult.type    || null,
+      price:     currentResult.price   || null,
+      extras:    currentResult.extras  || null,
+      allPhones: (currentResult.phones || []).map(p => p.number || p),
+      contactedNumber:  waNumber,
+      contactedDisplay: displayNumber,
+      whatsappMessage:  currentResult.whatsapp_message || '',
+      notes:      '',
+      bedrooms:   '',
+      bathrooms:  '',
+      parking:    '',
+      amenities:  ''
+    };
+    archive.unshift(entry);
+    store.set('apt_hunter_archive', JSON.stringify(archive));
+    showToast('💾 Guardado en archivo ✓');
+  }
+
+  function saveArchiveField(id, key, value) {
+    const archive = loadArchive();
+    const idx = archive.findIndex(e => e.id === id);
+    if (idx !== -1) {
+      archive[idx][key] = value;
+      store.set('apt_hunter_archive', JSON.stringify(archive));
+    }
+  }
+
+  function deleteArchiveEntry(id) {
+    const archive = loadArchive().filter(e => e.id !== id);
+    store.set('apt_hunter_archive', JSON.stringify(archive));
+    renderArchive();
+  }
+
+  // ── Archive: rendering ──────────────────────────────────────────────────────
+  function renderArchive() {
+    const archive = loadArchive();
+    const count = archive.length;
+    archiveTitle.textContent = count
+      ? `Archivo · ${count} propiedad${count !== 1 ? 'es' : ''}`
+      : 'Archivo';
+
+    if (count === 0) {
+      archiveList.innerHTML = '<div class="archive-empty">📭<br>No hay propiedades guardadas aún.<br>Contacta un número para guardar.</div>';
+      return;
+    }
+    archiveList.innerHTML = '';
+    archive.forEach(entry => archiveList.appendChild(buildArchiveCard(entry)));
+  }
+
+  function buildArchiveCard(entry) {
+    const card = document.createElement('div');
+    card.className = 'archive-card';
+
+    const dateStr = new Date(entry.date).toLocaleString('es-MX', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+
+    const detailParts = [entry.type, entry.price, entry.address, entry.extras].filter(Boolean);
+    const allPhonesStr = (entry.allPhones || []).join(', ');
+
+    // ── Top row ──
+    const top = document.createElement('div');
+    top.className = 'archive-card-top';
+
+    if (entry.thumbnail) {
+      const img = document.createElement('img');
+      img.className = 'archive-thumb';
+      img.src = entry.thumbnail;
+      img.alt = 'Foto';
+      top.appendChild(img);
+    } else {
+      const ph = document.createElement('div');
+      ph.className = 'archive-thumb-placeholder';
+      ph.textContent = '🏠';
+      top.appendChild(ph);
+    }
+
+    const info = document.createElement('div');
+    info.className = 'archive-info';
+    info.innerHTML =
+      `<div class="archive-date">${escHtml(dateStr)}</div>`
+      + (detailParts.length ? `<div class="archive-detail">${escHtml(detailParts.join(' · '))}</div>` : '')
+      + (allPhonesStr ? `<div class="archive-phones">📞 ${escHtml(allPhonesStr)}</div>` : '')
+      + `<div class="archive-contacted">Contactado: <span>+${escHtml(String(entry.contactedNumber))}</span></div>`;
+    top.appendChild(info);
+    card.appendChild(top);
+
+    // ── Property fields ──
+    const fieldDefs = [
+      { key: 'bedrooms',  label: '# Recámaras',  type: 'number', placeholder: '—' },
+      { key: 'bathrooms', label: '# Baños',       type: 'number', placeholder: '—' },
+      { key: 'parking',   label: '# Estacion.',   type: 'number', placeholder: '—' },
+      { key: 'amenities', label: 'Amenidades',    type: 'text',   placeholder: 'Gym, alberca, roof…', wide: true },
+    ];
+
+    const fieldsRow = document.createElement('div');
+    fieldsRow.className = 'archive-fields';
+
+    fieldDefs.forEach(({ key, label, type, placeholder, wide }) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'archive-field' + (wide ? ' wide' : '');
+
+      const lbl = document.createElement('div');
+      lbl.className = 'archive-field-label';
+      lbl.textContent = label;
+
+      const inp = document.createElement('input');
+      inp.type = type;
+      inp.className = 'archive-field-input';
+      inp.placeholder = placeholder;
+      inp.value = entry[key] || '';
+      if (type === 'number') inp.min = '0';
+      inp.addEventListener('blur', () => saveArchiveField(entry.id, key, inp.value));
+
+      wrap.appendChild(lbl);
+      wrap.appendChild(inp);
+      fieldsRow.appendChild(wrap);
+    });
+
+    card.appendChild(fieldsRow);
+
+    // ── Bottom row: notes + delete ──
+    const bottom = document.createElement('div');
+    bottom.className = 'archive-card-bottom';
+
+    const textarea = document.createElement('textarea');
+    textarea.className = 'archive-notes';
+    textarea.placeholder = 'Agregar notas…';
+    textarea.value = entry.notes || '';
+    textarea.rows = 2;
+    textarea.addEventListener('blur', () => saveArchiveField(entry.id, 'notes', textarea.value));
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-delete';
+    delBtn.title = 'Eliminar';
+    delBtn.textContent = '🗑';
+    delBtn.addEventListener('click', () => {
+      if (confirm('¿Eliminar esta propiedad del archivo?')) deleteArchiveEntry(entry.id);
+    });
+
+    bottom.appendChild(textarea);
+    bottom.appendChild(delBtn);
+    card.appendChild(bottom);
+    return card;
+  }
+
+  // ── Archive: CSV export ─────────────────────────────────────────────────────
+  function exportCSV() {
+    const archive = loadArchive();
+    if (!archive.length) { showToast('No hay entradas para exportar'); return; }
+
+    const headers = ['Fecha','Tipo','Dirección/Detalles','Precio','Números encontrados','Número contactado','Recámaras','Baños','Estacionamientos','Amenidades','Notas'];
+    const rows = archive.map(e => [
+      new Date(e.date).toLocaleString('es-MX'),
+      e.type    || '',
+      [e.address, e.extras].filter(Boolean).join(' · '),
+      e.price   || '',
+      (e.allPhones || []).join('; '),
+      e.contactedNumber || '',
+      e.bedrooms  || '',
+      e.bathrooms || '',
+      e.parking   || '',
+      e.amenities || '',
+      e.notes     || ''
+    ]);
+
+    const csv = [headers, ...rows]
+      .map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
+      .join('\r\n');
+
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `apt-hunter-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ── PWA Service Worker ─────────────────────────────────────────────────────
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+</script>
+</body>
+</html>
