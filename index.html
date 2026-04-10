@@ -727,6 +727,29 @@
     .bulk-file-item.fi-err  .fi-icon { color: var(--error); }
     .bulk-file-item.fi-pending .fi-icon { color: var(--text-muted); }
     .bulk-file-item.fi-active  .fi-icon { color: var(--accent); }
+
+    /* ── Sync ──────────────────────────────────────────────────────────────── */
+    .sync-status {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+      min-height: 1em;
+    }
+
+    .btn-sync {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 7px 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .btn-sync:hover { background: var(--border); }
+    .btn-sync:disabled { opacity: 0.4; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -750,6 +773,16 @@
       <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off" spellcheck="false">
       <button class="btn btn-ghost" id="saveKey">Guardar</button>
     </div>
+  </div>
+
+  <!-- Gist Sync -->
+  <div class="card">
+    <div class="card-label">Sincronización · GitHub Gist</div>
+    <div class="api-row">
+      <input type="password" id="ghToken" placeholder="ghp_..." autocomplete="off" spellcheck="false">
+      <button class="btn btn-ghost" id="saveGhToken">Guardar</button>
+    </div>
+    <div class="sync-status" id="syncStatus"></div>
   </div>
 
   <!-- Photo capture -->
@@ -829,7 +862,10 @@
   <div id="archiveView">
     <div class="archive-header">
       <span class="archive-title" id="archiveTitle">Archivo</span>
-      <button class="btn-csv" id="btnCsv">⬇ Descargar CSV</button>
+      <div style="display:flex;gap:6px;">
+        <button class="btn-sync" id="btnSync">↻ Sync</button>
+        <button class="btn-csv" id="btnCsv">⬇ CSV</button>
+      </div>
     </div>
     <div id="archiveList"></div>
   </div>
@@ -865,6 +901,10 @@
   const archiveList = document.getElementById('archiveList');
   const archiveTitle= document.getElementById('archiveTitle');
   const btnCsv      = document.getElementById('btnCsv');
+  const ghTokenEl   = document.getElementById('ghToken');
+  const saveGhTokenBtn = document.getElementById('saveGhToken');
+  const syncStatus  = document.getElementById('syncStatus');
+  const btnSync     = document.getElementById('btnSync');
 
   // ── Storage helper (fails gracefully in sandboxed iframes) ────────────────
   const store = {
@@ -1177,7 +1217,9 @@ Solo responde con el JSON, sin texto adicional.`;
       notes: '', bedrooms: '', bathrooms: '', parking: '', amenities: ''
     };
     archive.unshift(entry);
-    return store.set('apt_hunter_archive', JSON.stringify(archive));
+    store.set('apt_hunter_archive', JSON.stringify(archive));
+    gistPush();
+    return true;
   }
 
   btnBulkRun.addEventListener('click', async () => {
@@ -1476,9 +1518,143 @@ function escHtml(str) {
     scanView.style.display = 'none';
     archiveView.classList.add('visible');
     renderArchive();
+    gistPull();
   });
 
   btnCsv.addEventListener('click', exportCSV);
+
+  // ── Gist sync ─────────────────────────────────────────────────────────────
+  const GIST_FILE = 'apt-hunter-archive.json';
+
+  function getGhToken() { return store.get('apt_hunter_gh_token') || ''; }
+  function getGistId()  { return store.get('apt_hunter_gist_id')  || ''; }
+
+  // Populate token field and status on load
+  const savedGhToken = getGhToken();
+  if (savedGhToken) ghTokenEl.value = savedGhToken;
+  updateSyncStatus();
+
+  saveGhTokenBtn.addEventListener('click', () => {
+    const t = ghTokenEl.value.trim();
+    if (!t) return showToast('Ingresa un token de GitHub primero');
+    store.set('apt_hunter_gh_token', t);
+    showToast('Token guardado ✓');
+    updateSyncStatus();
+  });
+  ghTokenEl.addEventListener('keydown', e => { if (e.key === 'Enter') saveGhTokenBtn.click(); });
+
+  btnSync.addEventListener('click', async () => {
+    btnSync.disabled = true;
+    await gistPull();
+    btnSync.disabled = false;
+  });
+
+  function updateSyncStatus() {
+    const token = getGhToken();
+    const gistId = getGistId();
+    if (!token) {
+      syncStatus.textContent = 'Sin token — sincronización desactivada.';
+    } else if (!gistId) {
+      syncStatus.textContent = 'Token guardado. Gist se creará al guardar la primera propiedad.';
+    } else {
+      syncStatus.textContent = `Gist: ${gistId.slice(0, 10)}…`;
+    }
+  }
+
+  // Union merge: local entries overwrite remote for the same ID (local edits win).
+  // Entries only in remote get included (other device's additions).
+  function mergeArchives(local, remote) {
+    const byId = {};
+    remote.forEach(e => { byId[e.id] = e; });
+    local.forEach(e  => { byId[e.id] = e; });
+    return Object.values(byId).sort((a, b) => new Date(b.date) - new Date(a.date));
+  }
+
+  // Pull from Gist, merge with local, re-render.
+  async function gistPull() {
+    const token = getGhToken();
+    const gistId = getGistId();
+    if (!token || !gistId) return;
+    syncStatus.textContent = 'Sincronizando…';
+    try {
+      const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' }
+      });
+      if (!res.ok) throw new Error(`GitHub ${res.status}`);
+      const data = await res.json();
+      const content = data.files?.[GIST_FILE]?.content;
+      if (!content) { syncStatus.textContent = 'Gist vacío.'; return; }
+      const merged = mergeArchives(loadArchive(), JSON.parse(content));
+      store.set('apt_hunter_archive', JSON.stringify(merged));
+      renderArchive();
+      syncStatus.textContent = `Sincronizado · ${new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'})}`;
+    } catch (e) {
+      syncStatus.textContent = `Error al sincronizar: ${e.message}`;
+    }
+  }
+
+  // Pull-then-push: merge remote into local first so no entries are lost,
+  // then write the merged result back to the Gist. Creates Gist on first push.
+  async function gistPush() {
+    const token = getGhToken();
+    if (!token) return;
+    try {
+      let gistId = getGistId();
+
+      // Pull first to avoid overwriting the other device's new entries
+      if (gistId) {
+        try {
+          const pullRes = await fetch(`https://api.github.com/gists/${gistId}`, {
+            headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' }
+          });
+          if (pullRes.ok) {
+            const data = await pullRes.json();
+            const content = data.files?.[GIST_FILE]?.content;
+            if (content) {
+              const merged = mergeArchives(loadArchive(), JSON.parse(content));
+              store.set('apt_hunter_archive', JSON.stringify(merged));
+            }
+          }
+        } catch { /* ignore pull errors — push what we have */ }
+      }
+
+      const payload = JSON.stringify({
+        description: 'Apt Hunter archive',
+        public: false,
+        files: { [GIST_FILE]: { content: JSON.stringify(loadArchive()) } }
+      });
+
+      if (!gistId) {
+        const res = await fetch('https://api.github.com/gists', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/vnd.github+json',
+            'Content-Type': 'application/json'
+          },
+          body: payload
+        });
+        if (!res.ok) throw new Error(`GitHub ${res.status}`);
+        const created = await res.json();
+        store.set('apt_hunter_gist_id', created.id);
+        updateSyncStatus();
+      } else {
+        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/vnd.github+json',
+            'Content-Type': 'application/json'
+          },
+          body: payload
+        });
+        if (!res.ok) throw new Error(`GitHub ${res.status}`);
+      }
+      syncStatus.textContent = `Sincronizado · ${new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'})}`;
+    } catch (e) {
+      syncStatus.textContent = `Error al guardar en Gist: ${e.message}`;
+    }
+  }
 
   // ── Archive: persistence ────────────────────────────────────────────────────
   function loadArchive() {
@@ -1510,6 +1686,7 @@ function escHtml(str) {
     archive.unshift(entry);
     store.set('apt_hunter_archive', JSON.stringify(archive));
     showToast('💾 Guardado en archivo ✓');
+    gistPush();
   }
 
   function saveArchiveField(id, key, value) {
@@ -1518,12 +1695,14 @@ function escHtml(str) {
     if (idx !== -1) {
       archive[idx][key] = value;
       store.set('apt_hunter_archive', JSON.stringify(archive));
+      gistPush();
     }
   }
 
   function deleteArchiveEntry(id) {
     const archive = loadArchive().filter(e => e.id !== id);
     store.set('apt_hunter_archive', JSON.stringify(archive));
+    gistPush();
     renderArchive();
   }
 
