@@ -1533,13 +1533,16 @@ function escHtml(str) {
   const savedGhToken = getGhToken();
   if (savedGhToken) ghTokenEl.value = savedGhToken;
   updateSyncStatus();
+  // Auto-discover Gist on load (covers new devices that have token but no ID)
+  if (getGhToken() && !getGistId()) discoverGist();
 
-  saveGhTokenBtn.addEventListener('click', () => {
+  saveGhTokenBtn.addEventListener('click', async () => {
     const t = ghTokenEl.value.trim();
     if (!t) return showToast('Ingresa un token de GitHub primero');
     store.set('apt_hunter_gh_token', t);
     showToast('Token guardado ✓');
     updateSyncStatus();
+    await discoverGist();
   });
   ghTokenEl.addEventListener('keydown', e => { if (e.key === 'Enter') saveGhTokenBtn.click(); });
 
@@ -1548,6 +1551,37 @@ function escHtml(str) {
     await gistPull();
     btnSync.disabled = false;
   });
+
+  // Search the user's gists for one containing apt-hunter-archive.json.
+  // Stores the ID if found, then pulls immediately.
+  async function discoverGist() {
+    const token = getGhToken();
+    if (!token || getGistId()) return; // already have an ID
+    syncStatus.textContent = 'Buscando Gist existente…';
+    try {
+      let page = 1;
+      while (true) {
+        const res = await fetch(`https://api.github.com/gists?per_page=100&page=${page}`, {
+          headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' }
+        });
+        if (!res.ok) throw new Error(`GitHub ${res.status}`);
+        const gists = await res.json();
+        if (!gists.length) break;
+        const match = gists.find(g => g.files && g.files[GIST_FILE]);
+        if (match) {
+          store.set('apt_hunter_gist_id', match.id);
+          updateSyncStatus();
+          await gistPull();
+          return;
+        }
+        if (gists.length < 100) break;
+        page++;
+      }
+      syncStatus.textContent = 'No se encontró Gist. Se creará al guardar la primera propiedad.';
+    } catch (e) {
+      syncStatus.textContent = `Error al buscar Gist: ${e.message}`;
+    }
+  }
 
   function updateSyncStatus() {
     const token = getGhToken();
