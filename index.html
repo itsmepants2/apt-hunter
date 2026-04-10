@@ -1066,7 +1066,8 @@ Solo responde con el JSON, sin texto adicional.`;
   }
 
   // ── Bulk upload ─────────────────────────────────────────────────────────────
-  let bulkFiles = []; // persists across both picker and drag-drop paths
+  let bulkFiles = [];     // persists across both picker and drag-drop paths
+  let dropHandled = false; // prevents the change event that browsers fire after a drop from overwriting bulkFiles
   const bulkInput       = document.getElementById('bulkInput');
   const bulkDrop        = document.getElementById('bulkDrop');
   const bulkCount       = document.getElementById('bulkCount');
@@ -1076,13 +1077,18 @@ Solo responde con el JSON, sin texto adicional.`;
   const bulkStatus      = document.getElementById('bulkStatus');
   const bulkFileList    = document.getElementById('bulkFileList');
 
-  bulkInput.addEventListener('change', () => updateBulkSelection(bulkInput.files));
+  bulkInput.addEventListener('change', () => {
+    if (dropHandled) { dropHandled = false; return; }
+    updateBulkSelection(bulkInput.files);
+  });
 
   bulkDrop.addEventListener('dragover',  e => { e.preventDefault(); bulkDrop.classList.add('drag-over'); });
   bulkDrop.addEventListener('dragleave', () => bulkDrop.classList.remove('drag-over'));
   bulkDrop.addEventListener('drop', e => {
     e.preventDefault();
     bulkDrop.classList.remove('drag-over');
+    dropHandled = true;
+    setTimeout(() => { dropHandled = false; }, 500);
     if (e.dataTransfer.files.length) updateBulkSelection(e.dataTransfer.files);
   });
 
@@ -1151,7 +1157,7 @@ Solo responde con el JSON, sin texto adicional.`;
     const apiKey = apiKeyEl.value.trim() || store.get('apt_hunter_api_key') || '';
     if (!apiKey) { showError('Ingresa y guarda tu Anthropic API key primero.'); return; }
 
-    const files = bulkFiles;
+    const files = [...bulkFiles];
     if (!files.length) { showToast('Selecciona fotos primero.'); return; }
 
     btnBulkRun.disabled = true;
