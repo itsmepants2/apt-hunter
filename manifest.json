@@ -1,0 +1,18 @@
+{
+  "name": "Apt Hunter",
+  "short_name": "Apt Hunter",
+  "description": "Fotografía letreros de apartamentos y genera mensajes de WhatsApp al instante.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f0f1a",
+  "theme_color": "#1a1a2e",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231a1a2e'/><text y='.9em' font-size='75' x='12'>🏠</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
