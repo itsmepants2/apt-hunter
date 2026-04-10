@@ -1083,14 +1083,24 @@ Solo responde con el JSON, sin texto adicional.`;
   bulkDrop.addEventListener('drop', e => {
     e.preventDefault();
     bulkDrop.classList.remove('drag-over');
-    const imgs = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-    if (imgs.length) updateBulkSelection(imgs);
+    if (e.dataTransfer.files.length) updateBulkSelection(e.dataTransfer.files);
   });
+
+  // A file counts as an image if its MIME starts with image/, OR if its MIME is
+  // empty/unknown but the extension is a known image format (handles iOS photo
+  // picker which sometimes returns type:'' for valid JPEGs).
+  const IMAGE_EXTS = /\.(jpe?g|png|gif|webp|heic|heif|bmp|avif|tiff?)$/i;
+  function isLikelyImage(f) {
+    const t = (f.type || '').toLowerCase();
+    if (t.startsWith('image/')) return true;
+    if (!t) return IMAGE_EXTS.test(f.name || '');
+    return false;
+  }
 
   function updateBulkSelection(files) {
     const all  = Array.from(files);
-    const imgs = all.filter(f => f.type.startsWith('image/'));
-    const skip = all.filter(f => !f.type.startsWith('image/'));
+    const imgs = all.filter(isLikelyImage);
+    const skip = all.filter(f => !isLikelyImage(f));
     if (!all.length) return;
     bulkFiles = imgs; // store so click handler can access drag-dropped files too
     const total = all.length;
@@ -1162,7 +1172,7 @@ Solo responde con el JSON, sin texto adicional.`;
       try {
         const dataUrl  = await readFileAsDataUrl(f);
         const base64   = dataUrl.split(',')[1];
-        const mime     = f.type || 'image/jpeg';
+        const mime     = (f.type && f.type.startsWith('image/')) ? f.type : 'image/jpeg';
         const [result, thumbnail] = await Promise.all([
           analyzeImage(base64, mime, apiKey),
           generateThumbnail(dataUrl),
