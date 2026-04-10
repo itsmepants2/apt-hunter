@@ -1012,7 +1012,7 @@ Solo responde con el JSON, sin texto adicional.`;
   // Calls the API and returns the parsed result object. Throws on error.
   async function analyzeImage(base64, mime, apiKey) {
     const payload = {
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5',
       max_tokens: 1024,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: [
@@ -1078,7 +1078,8 @@ Solo responde con el JSON, sin texto adicional.`;
   const bulkFileList    = document.getElementById('bulkFileList');
 
   bulkInput.addEventListener('change', () => {
-    if (dropHandled) { dropHandled = false; return; }
+    console.log('[bulk] change event fired — dropHandled:', dropHandled, '| input.files:', Array.from(bulkInput.files).map(f => ({name:f.name, size:f.size, type:f.type})));
+    if (dropHandled) { dropHandled = false; console.log('[bulk] change suppressed (was a drop)'); return; }
     updateBulkSelection(bulkInput.files);
   });
 
@@ -1089,6 +1090,7 @@ Solo responde con el JSON, sin texto adicional.`;
     bulkDrop.classList.remove('drag-over');
     dropHandled = true;
     setTimeout(() => { dropHandled = false; }, 500);
+    console.log('[bulk] drop event — dataTransfer.files:', Array.from(e.dataTransfer.files).map(f => ({name:f.name, size:f.size, type:f.type})));
     if (e.dataTransfer.files.length) updateBulkSelection(e.dataTransfer.files);
   });
 
@@ -1107,6 +1109,7 @@ Solo responde con el JSON, sin texto adicional.`;
     const all  = Array.from(files);
     const imgs = all.filter(isLikelyImage);
     const skip = all.filter(f => !isLikelyImage(f));
+    console.log('[bulk] updateBulkSelection — all:', all.map(f=>({name:f.name,size:f.size,type:f.type})), '| imgs:', imgs.map(f=>f.name), '| skipped:', skip.map(f=>f.name));
     if (!all.length) return;
     bulkFiles = imgs; // store so click handler can access drag-dropped files too
     const total = all.length;
@@ -1158,6 +1161,7 @@ Solo responde con el JSON, sin texto adicional.`;
     if (!apiKey) { showError('Ingresa y guarda tu Anthropic API key primero.'); return; }
 
     const files = [...bulkFiles];
+    console.log('[bulk] run clicked — files snapshot:', files.map(f=>({name:f.name,size:f.size,type:f.type})));
     if (!files.length) { showToast('Selecciona fotos primero.'); return; }
 
     btnBulkRun.disabled = true;
@@ -1165,6 +1169,7 @@ Solo responde con el JSON, sin texto adicional.`;
 
     for (let i = 0; i < files.length; i++) {
       const f = files[i];
+      console.log(`[bulk] processing file ${i+1}/${files.length}:`, {name:f.name, size:f.size, type:f.type});
       const rowId = `bfi-${CSS.escape(f.name + f.size)}`;
       const row = document.getElementById(rowId);
 
