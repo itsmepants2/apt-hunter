@@ -1134,7 +1134,7 @@ Solo responde con el JSON, sin texto adicional.`;
       notes: '', bedrooms: '', bathrooms: '', parking: '', amenities: ''
     };
     archive.unshift(entry);
-    store.set('apt_hunter_archive', JSON.stringify(archive));
+    return store.set('apt_hunter_archive', JSON.stringify(archive));
   }
 
   btnBulkRun.addEventListener('click', async () => {
@@ -1152,6 +1152,9 @@ Solo responde con el JSON, sin texto adicional.`;
       const rowId = `bfi-${CSS.escape(f.name + f.size)}`;
       const row = document.getElementById(rowId);
 
+      // Pause between requests to avoid rate limiting
+      if (i > 0) await new Promise(r => setTimeout(r, 1000));
+
       bulkStatus.textContent = `Analizando ${i + 1} de ${files.length}…`;
       bulkProgressFill.style.width = `${(i / files.length) * 100}%`;
       if (row) { row.className = 'bulk-file-item fi-active'; row.querySelector('.fi-icon').textContent = '⟳'; }
@@ -1164,8 +1167,9 @@ Solo responde con el JSON, sin texto adicional.`;
           analyzeImage(base64, mime, apiKey),
           generateThumbnail(dataUrl),
         ]);
-        saveToArchiveDirect(result, thumbnail);
-        if (row) { row.className = 'bulk-file-item fi-ok';  row.querySelector('.fi-icon').textContent = '✓'; }
+        const saved = saveToArchiveDirect(result, thumbnail);
+        if (!saved) throw new Error('No se pudo guardar (almacenamiento lleno)');
+        if (row) { row.className = 'bulk-file-item fi-ok'; row.querySelector('.fi-icon').textContent = '✓'; }
         succeeded++;
       } catch (err) {
         if (row) {
