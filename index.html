@@ -1066,6 +1066,7 @@ Solo responde con el JSON, sin texto adicional.`;
   }
 
   // ── Bulk upload ─────────────────────────────────────────────────────────────
+  let bulkFiles = []; // persists across both picker and drag-drop paths
   const bulkInput       = document.getElementById('bulkInput');
   const bulkDrop        = document.getElementById('bulkDrop');
   const bulkCount       = document.getElementById('bulkCount');
@@ -1089,6 +1090,7 @@ Solo responde con el JSON, sin texto adicional.`;
   function updateBulkSelection(files) {
     const list = Array.from(files).filter(f => f.type.startsWith('image/'));
     if (!list.length) return;
+    bulkFiles = list; // store so click handler can access drag-dropped files too
     bulkCount.textContent = `${list.length} foto${list.length !== 1 ? 's' : ''} seleccionada${list.length !== 1 ? 's' : ''}`;
     bulkCount.style.display = '';
     btnBulkRun.disabled = false;
@@ -1128,10 +1130,10 @@ Solo responde con el JSON, sin texto adicional.`;
 
   btnBulkRun.addEventListener('click', async () => {
     const apiKey = apiKeyEl.value.trim() || store.get('apt_hunter_api_key') || '';
-    if (!apiKey) { showToast('Ingresa y guarda tu API key primero.'); return; }
+    if (!apiKey) { showError('Ingresa y guarda tu Anthropic API key primero.'); return; }
 
-    const files = Array.from(bulkInput.files).filter(f => f.type.startsWith('image/'));
-    if (!files.length) return;
+    const files = bulkFiles;
+    if (!files.length) { showToast('Selecciona fotos primero.'); return; }
 
     btnBulkRun.disabled = true;
     let succeeded = 0, failed = 0;
