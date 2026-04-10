@@ -4,8 +4,8 @@
   "description": "Fotografía letreros de apartamentos y genera mensajes de WhatsApp al instante.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f0f1a",
-  "theme_color": "#1a1a2e",
+  "background_color": "#F5F0E8",
+  "theme_color": "#F5F0E8",
   "orientation": "portrait",
   "icons": [
     {
