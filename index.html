@@ -1631,9 +1631,7 @@ function escHtml(str) {
     delBtn.className = 'btn-delete';
     delBtn.title = 'Eliminar';
     delBtn.textContent = '🗑';
-    delBtn.addEventListener('click', () => {
-      if (confirm('¿Eliminar esta propiedad del archivo?')) deleteArchiveEntry(entry.id);
-    });
+    delBtn.addEventListener('click', () => deleteArchiveEntry(entry.id));
 
     bottom.appendChild(textarea);
     bottom.appendChild(delBtn);
