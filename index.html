@@ -431,6 +431,8 @@
     @media (max-width: 400px) {
       body { padding: 12px; }
       h1 { font-size: 1.3rem; }
+      .status-bar { padding: 6px 8px; gap: 3px; }
+      .status-step { font-size: 0.62rem; padding: 4px 1px; }
     }
 
     /* ── View tabs ─────────────────────────────────────────────────────────── */
@@ -749,6 +751,9 @@
       text-align: center;
       transition: background 0.15s, color 0.15s, border-color 0.15s;
       line-height: 1.3;
+      word-break: break-word;
+      overflow: hidden;
+      min-width: 0;
     }
 
     .status-step.past {
@@ -1969,7 +1974,7 @@ function escHtml(str) {
     const archive = loadArchive();
     if (!archive.length) { showToast('No hay entradas para exportar'); return; }
 
-    const headers = ['Fecha','Estado','Tipo','Dirección/Detalles','Precio letrero','Precio (MXN)','Tamaño (m²)','Colonia','Números encontrados','Número contactado','Recámaras','Baños','Estacionamientos','Amenidades','Notas'];
+    const headers = ['Fecha','Estado','Tipo','Dirección/Detalles','Precio letrero','Precio (MXN)','Tamaño (m²)','Colonia','Números encontrados','Número contactado','Recámaras','Baños','Estacionamientos','Amenidades','Notas','Fotos adicionales'];
     const statusLabel = k => STATUSES.find(s => s.key === k)?.label || k || '';
     const rows = archive.map(e => [
       new Date(e.date).toLocaleString('es-MX'),
@@ -1986,7 +1991,8 @@ function escHtml(str) {
       e.bathrooms || '',
       e.parking   || '',
       e.amenities || '',
-      e.notes     || ''
+      e.notes     || '',
+      (e.extraPhotos || []).length || ''
     ]);
 
     const csv = [headers, ...rows]
