@@ -32,6 +32,32 @@ async function callAnthropicMessages(payload, apiKey) {
   return res.json();
 }
 
+/**
+ * Send plain-text listing page content to Claude and extract structured fields.
+ * Returns a parsed object with keys: priceMxn, sizeSqm, bedrooms, bathrooms,
+ * parking, amenities, neighborhood. Missing fields are null.
+ */
+async function extractListingFromText(pageText, apiKey) {
+  const prompt =
+    'Extract real estate listing details from the webpage text below. '
+    + 'Return ONLY a JSON object with exactly these keys (null for any not found):\n'
+    + '{"priceMxn":"price as plain string e.g. 15000 or 15,000/mes",'
+    + '"sizeSqm":"numeric m² as string","bedrooms":"count as string",'
+    + '"bathrooms":"count as string","parking":"count as string",'
+    + '"amenities":"comma-separated list","neighborhood":"colonia or neighborhood name"}\n\n'
+    + 'Webpage text:\n' + pageText;
+
+  const payload = {
+    model: 'claude-sonnet-4-5',
+    max_tokens: 512,
+    messages: [{ role: 'user', content: prompt }],
+  };
+  const data = await callAnthropicMessages(payload, apiKey);
+  const raw  = data?.content?.[0]?.text || '';
+  const m    = raw.match(/```(?:json)?\s*([\s\S]*?)```/) || raw.match(/(\{[\s\S]*\})/);
+  return JSON.parse((m ? m[1] : raw).trim());
+}
+
 // ── GitHub Gist ────────────────────────────────────────────────────────────
 
 function _ghHeaders(token) {

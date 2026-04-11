@@ -884,6 +884,54 @@
       padding-bottom: 24px;
     }
 
+    /* ── Listing URL extractor ─────────────────────────────────────────────── */
+    .listing-url-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      border-top: 1px solid var(--border);
+      padding: 10px 12px 4px;
+    }
+
+    .listing-url-input {
+      flex: 1;
+      min-width: 0;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.83rem;
+      padding: 7px 10px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .listing-url-input:focus { border-color: var(--accent); }
+    .listing-url-input::placeholder { color: var(--text-muted); }
+
+    .btn-extract {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 7px 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: opacity 0.15s;
+    }
+    .btn-extract:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .url-extract-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      padding: 0 12px 8px;
+      min-height: 1.2em;
+    }
+    .url-extract-status.err { color: var(--error); }
+    .url-extract-status.ok  { color: var(--green-dark); }
+
     /* ── Share button (archive card) ───────────────────────────────────────── */
     .btn-share {
       background: transparent;
@@ -1143,6 +1191,29 @@
   }
 
   // Returns a Promise<string> (dataURL) from a File
+  // Strip HTML tags and collapse whitespace; truncate to keep API costs low.
+  function htmlToText(html) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    doc.querySelectorAll('script,style,nav,footer,header,aside,iframe').forEach(el => el.remove());
+    return (doc.body?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 15000);
+  }
+
+  // Fetch a URL's text content. Tries direct fetch first (works when CORS
+  // headers are present), then falls back to the allorigins.win proxy.
+  async function fetchPageText(url) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) return htmlToText(await res.text());
+    } catch { /* CORS blocked — fall through to proxy */ }
+
+    const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxy);
+    if (!res.ok) throw new Error(`No se pudo acceder al anuncio (${res.status})`);
+    const data = await res.json();
+    if (!data.contents) throw new Error('El proxy no devolvió contenido');
+    return htmlToText(data.contents);
+  }
+
   function readFileAsDataUrl(file) {
     return new Promise((resolve, reject) => {
       const r = new FileReader();
@@ -2014,9 +2085,32 @@ function escHtml(str) {
       { key: 'amenities',    label: 'Amenidades',    type: 'text',   placeholder: 'Gym, alberca, roof…', wide: true },
     ];
 
+    // ── URL extractor row ──
+    const urlRow = document.createElement('div');
+    urlRow.className = 'listing-url-row';
+
+    const urlInput = document.createElement('input');
+    urlInput.type = 'url';
+    urlInput.className = 'listing-url-input';
+    urlInput.placeholder = 'Pegar URL del anuncio…';
+
+    const extractBtn = document.createElement('button');
+    extractBtn.className = 'btn-extract';
+    extractBtn.textContent = 'Extraer';
+
+    urlRow.appendChild(urlInput);
+    urlRow.appendChild(extractBtn);
+    card.appendChild(urlRow);
+
+    const urlStatus = document.createElement('div');
+    urlStatus.className = 'url-extract-status';
+    card.appendChild(urlStatus);
+
+    // ── Property fields ──
     const fieldsRow = document.createElement('div');
     fieldsRow.className = 'archive-fields';
 
+    const fieldInputs = {};
     fieldDefs.forEach(({ key, label, type, placeholder, wide }) => {
       const wrap = document.createElement('div');
       wrap.className = 'archive-field' + (wide ? ' wide' : '');
@@ -2033,10 +2127,55 @@ function escHtml(str) {
       if (type === 'number') inp.min = '0';
       inp.addEventListener('blur', () => saveArchiveField(entry.id, key, inp.value));
 
+      fieldInputs[key] = inp;
       wrap.appendChild(lbl);
       wrap.appendChild(inp);
       fieldsRow.appendChild(wrap);
     });
+
+    // Wire up URL extraction
+    async function runExtract() {
+      const url = urlInput.value.trim();
+      if (!url) return;
+      const apiKey = store.get('apt_hunter_api_key') || '';
+      if (!apiKey) { urlStatus.textContent = 'Guarda tu API key primero.'; urlStatus.className = 'url-extract-status err'; return; }
+
+      extractBtn.disabled = true;
+      extractBtn.textContent = '…';
+      urlStatus.className = 'url-extract-status';
+      urlStatus.textContent = 'Obteniendo página…';
+
+      try {
+        const pageText = await fetchPageText(url);
+        urlStatus.textContent = 'Analizando con Claude…';
+        const extracted = await extractListingFromText(pageText, apiKey);
+
+        const EXTRACT_KEYS = ['priceMxn', 'sizeSqm', 'bedrooms', 'bathrooms', 'parking', 'amenities', 'neighborhood'];
+        let filled = 0;
+        EXTRACT_KEYS.forEach(key => {
+          const val = extracted[key];
+          if (val != null && String(val).trim() && fieldInputs[key]) {
+            fieldInputs[key].value = String(val).trim();
+            saveArchiveField(entry.id, key, fieldInputs[key].value);
+            filled++;
+          }
+        });
+
+        urlStatus.className = 'url-extract-status ok';
+        urlStatus.textContent = filled
+          ? `✓ ${filled} campo${filled !== 1 ? 's' : ''} extraído${filled !== 1 ? 's' : ''}. Revisa y corrige si es necesario.`
+          : 'No se encontraron campos reconocibles en el anuncio.';
+      } catch (e) {
+        urlStatus.className = 'url-extract-status err';
+        urlStatus.textContent = `Error: ${e.message}`;
+      } finally {
+        extractBtn.disabled = false;
+        extractBtn.textContent = 'Extraer';
+      }
+    }
+
+    extractBtn.addEventListener('click', runExtract);
+    urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') runExtract(); });
 
     card.appendChild(fieldsRow);
 
