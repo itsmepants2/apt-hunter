@@ -477,25 +477,23 @@
       padding: 12px;
     }
 
-    .archive-thumb {
-      width: 72px;
-      height: 72px;
+    /* hero image — full card width, fixed height */
+    .archive-hero {
+      width: 100%;
+      height: 200px;
       object-fit: cover;
-      border-radius: 8px;
-      flex-shrink: 0;
+      display: block;
       background: var(--surface2);
     }
 
-    .archive-thumb-placeholder {
-      width: 72px;
-      height: 72px;
-      border-radius: 8px;
-      flex-shrink: 0;
+    .archive-hero-placeholder {
+      width: 100%;
+      height: 200px;
       background: var(--surface2);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.6rem;
+      font-size: 3rem;
     }
 
     .archive-info {
@@ -730,43 +728,48 @@
     }
 
     /* ── Extra photos ──────────────────────────────────────────────────────── */
-    .archive-thumb-col {
+    /* horizontal photo strip below the hero */
+    .archive-photos-strip {
       display: flex;
-      flex-direction: column;
       gap: 6px;
-      flex-shrink: 0;
+      overflow-x: auto;
+      padding: 8px 10px;
+      border-top: 1px solid var(--border);
+      background: var(--surface2);
+      scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
     }
+    .archive-photos-strip::-webkit-scrollbar { height: 4px; }
+    .archive-photos-strip::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-    .extra-photos-strip {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      width: 72px;
-    }
-
-    .extra-photo-thumb {
-      width: 32px;
-      height: 32px;
+    .archive-strip-thumb {
+      width: 80px;
+      height: 80px;
       object-fit: cover;
-      border-radius: 4px;
+      border-radius: 6px;
+      flex-shrink: 0;
       cursor: pointer;
+      transition: opacity 0.15s;
     }
+    .archive-strip-thumb:hover { opacity: 0.8; }
+    .archive-strip-thumb.active { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-    .btn-add-photo {
-      width: 32px;
-      height: 32px;
-      border-radius: 4px;
+    .archive-strip-add {
+      width: 80px;
+      height: 80px;
+      border-radius: 6px;
       border: 1.5px dashed var(--border);
       background: transparent;
       color: var(--text-muted);
-      font-size: 1rem;
+      font-size: 1.5rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
       transition: border-color 0.15s, color 0.15s;
     }
-    .btn-add-photo:hover { border-color: var(--accent); color: var(--accent); }
+    .archive-strip-add:hover { border-color: var(--accent); color: var(--accent); }
 
     /* ── Gallery view ─────────────────────────────────────────────────────── */
     .gallery-back {
@@ -2768,38 +2771,46 @@ function escHtml(str) {
     const detailParts = [entry.type, entry.price, entry.address, entry.extras].filter(Boolean);
     const allPhonesStr = (entry.allPhones || []).join(', ');
 
-    // ── Top row ──
-    const top = document.createElement('div');
-    top.className = 'archive-card-top';
+    // ── Photos section: hero + horizontal scrollable strip ──
+    const photosSection = document.createElement('div');
+    const allPhotos = [entry.thumbnail, ...(entry.extraPhotos || [])].filter(Boolean);
 
-    // ── Thumbnail column (main + extra photos + add button) ──
-    const thumbCol = document.createElement('div');
-    thumbCol.className = 'archive-thumb-col';
-
-    if (entry.thumbnail) {
-      const img = document.createElement('img');
-      img.className = 'archive-thumb';
-      img.src = entry.thumbnail;
-      img.alt = 'Foto';
-      thumbCol.appendChild(img);
+    // Hero
+    let heroEl;
+    if (allPhotos.length > 0) {
+      heroEl = document.createElement('img');
+      heroEl.className = 'archive-hero';
+      heroEl.src = allPhotos[0];
+      heroEl.alt = 'Foto';
     } else {
-      const ph = document.createElement('div');
-      ph.className = 'archive-thumb-placeholder';
-      ph.textContent = '🏠';
-      thumbCol.appendChild(ph);
+      heroEl = document.createElement('div');
+      heroEl.className = 'archive-hero-placeholder';
+      heroEl.textContent = '🏠';
+    }
+    photosSection.appendChild(heroEl);
+
+    // Horizontal strip (always present — shows the + add button even with no photos)
+    const strip = document.createElement('div');
+    strip.className = 'archive-photos-strip';
+
+    // Helper: make a thumbnail that promotes itself to hero on click
+    function makeStripThumb(src, isActive) {
+      const t = document.createElement('img');
+      t.className = 'archive-strip-thumb' + (isActive ? ' active' : '');
+      t.src = src;
+      t.addEventListener('click', () => {
+        if (heroEl.tagName === 'IMG') heroEl.src = src;
+        strip.querySelectorAll('.archive-strip-thumb').forEach(s => s.classList.remove('active'));
+        t.classList.add('active');
+      });
+      return t;
     }
 
-    // Extra photos strip + add button
-    const strip = document.createElement('div');
-    strip.className = 'extra-photos-strip';
-    (entry.extraPhotos || []).forEach(src => {
-      const ei = document.createElement('img');
-      ei.className = 'extra-photo-thumb';
-      ei.src = src;
-      strip.appendChild(ei);
-    });
+    allPhotos.forEach((src, idx) => strip.appendChild(makeStripThumb(src, idx === 0)));
+
+    // Add-photo button
     const addLabel = document.createElement('label');
-    addLabel.className = 'btn-add-photo';
+    addLabel.className = 'archive-strip-add';
     addLabel.title = 'Agregar foto';
     addLabel.textContent = '+';
     const addInput = document.createElement('input');
@@ -2810,20 +2821,30 @@ function escHtml(str) {
       const file = addInput.files[0];
       if (!file) return;
       const dataUrl = await readFileAsDataUrl(file);
-      const thumb = await generateThumbnail(dataUrl);
-      if (!thumb) return;
-      saveArchivePhotoAdd(entry.id, thumb);
-      const ei = document.createElement('img');
-      ei.className = 'extra-photo-thumb';
-      ei.src = thumb;
-      strip.insertBefore(ei, addLabel);
+      const thumbSrc = await generateThumbnail(dataUrl);
+      if (!thumbSrc) return;
+      saveArchivePhotoAdd(entry.id, thumbSrc);
+      // If the hero is still a placeholder, replace it with a real img
+      if (heroEl.tagName !== 'IMG') {
+        const newHero = document.createElement('img');
+        newHero.className = 'archive-hero';
+        newHero.src = thumbSrc;
+        newHero.alt = 'Foto';
+        photosSection.replaceChild(newHero, heroEl);
+        heroEl = newHero;
+      }
+      strip.insertBefore(makeStripThumb(thumbSrc, false), addLabel);
       addInput.value = '';
     });
     addLabel.appendChild(addInput);
     strip.appendChild(addLabel);
-    thumbCol.appendChild(strip);
-    top.appendChild(thumbCol);
 
+    photosSection.appendChild(strip);
+    card.appendChild(photosSection);
+
+    // ── Info row (date, detail, phones) ──
+    const top = document.createElement('div');
+    top.className = 'archive-card-top';
     const info = document.createElement('div');
     info.className = 'archive-info';
     info.innerHTML =
