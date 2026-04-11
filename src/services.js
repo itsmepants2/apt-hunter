@@ -1,28 +1,28 @@
 /**
  * services.js — every external HTTP call in one place.
  *
- * To route through a Cloudflare Worker or Vercel function later,
- * change ANTHROPIC_URL and GITHUB_API here — nothing else needs touching.
+ * Anthropic and listing-fetch calls are proxied through the Cloudflare Worker
+ * so no API key is ever stored in the browser. To point at a different Worker,
+ * change WORKER_BASE only.
+ *
+ * GitHub Gist calls go directly to the GitHub API (authenticated with the
+ * user's personal access token stored in localStorage).
  */
 
-const ANTHROPIC_URL = 'https://api.anthropic.com/v1/messages';
-const GITHUB_API    = 'https://api.github.com';
+const WORKER_BASE = 'https://apt-hunter-proxy.stevebryant.workers.dev';
+const GITHUB_API  = 'https://api.github.com';
 
-// ── Anthropic ──────────────────────────────────────────────────────────────
+// ── Anthropic (via Worker) ─────────────────────────────────────────────────
 
 /**
- * POST a messages payload to the Anthropic API.
+ * POST a messages payload to the Anthropic API via the Worker proxy.
+ * The Worker injects the API key — no key is needed in the browser.
  * Returns the full parsed response object. Throws on non-2xx.
  */
-async function callAnthropicMessages(payload, apiKey) {
-  const res = await fetch(ANTHROPIC_URL, {
+async function callAnthropicMessages(payload) {
+  const res = await fetch(`${WORKER_BASE}/anthropic`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
@@ -37,7 +37,7 @@ async function callAnthropicMessages(payload, apiKey) {
  * Returns a parsed object with keys: priceMxn, sizeSqm, bedrooms, bathrooms,
  * parking, amenities, neighborhood. Missing fields are null.
  */
-async function extractListingFromText(pageText, apiKey) {
+async function extractListingFromText(pageText) {
   const prompt =
     'Extract real estate listing details from the webpage text below. '
     + 'Return ONLY a JSON object with exactly these keys (null for any not found):\n'
@@ -52,13 +52,25 @@ async function extractListingFromText(pageText, apiKey) {
     max_tokens: 512,
     messages: [{ role: 'user', content: prompt }],
   };
-  const data = await callAnthropicMessages(payload, apiKey);
+  const data = await callAnthropicMessages(payload);
   const raw  = data?.content?.[0]?.text || '';
   const m    = raw.match(/```(?:json)?\s*([\s\S]*?)```/) || raw.match(/(\{[\s\S]*\})/);
   return JSON.parse((m ? m[1] : raw).trim());
 }
 
-// ── GitHub Gist ────────────────────────────────────────────────────────────
+// ── Listing URL fetch (via Worker) ─────────────────────────────────────────
+
+/**
+ * Fetch a remote URL's raw content through the Worker edge.
+ * Bypasses browser CORS restrictions. Returns the response body as text.
+ */
+async function fetchUrlViaWorker(url) {
+  const res = await fetch(`${WORKER_BASE}/fetch?url=${encodeURIComponent(url)}`);
+  if (!res.ok) throw new Error(`No se pudo obtener la página (${res.status})`);
+  return res.text();
+}
+
+// ── GitHub Gist (direct) ───────────────────────────────────────────────────
 
 function _ghHeaders(token) {
   return {
