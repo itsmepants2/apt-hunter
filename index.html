@@ -872,6 +872,7 @@
 
   <div class="toast" id="toast"></div>
 
+<script src="src/services.js"></script>
 <script>
   // ── State ──────────────────────────────────────────────────────────────────
   let imageBase64 = null;
@@ -1084,21 +1085,7 @@ Solo responde con el JSON, sin texto adicional.`;
         { type: 'text',  text: 'Analiza este letrero de propiedad y extrae la información solicitada en JSON.' }
       ]}]
     };
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err?.error?.message || `HTTP ${res.status}`);
-    }
-    const data = await res.json();
+    const data = await callAnthropicMessages(payload, apiKey);
     const rawText = data?.content?.[0]?.text || '';
     const jsonMatch = rawText.match(/```json\s*([\s\S]*?)```/) || rawText.match(/```\s*([\s\S]*?)```/);
     const jsonStr = jsonMatch ? jsonMatch[1] : rawText;
@@ -1561,11 +1548,7 @@ function escHtml(str) {
     try {
       let page = 1;
       while (true) {
-        const res = await fetch(`https://api.github.com/gists?per_page=100&page=${page}`, {
-          headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' }
-        });
-        if (!res.ok) throw new Error(`GitHub ${res.status}`);
-        const gists = await res.json();
+        const gists = await ghListGists(token, page);
         if (!gists.length) break;
         const match = gists.find(g => g.files && g.files[GIST_FILE]);
         if (match) {
@@ -1611,11 +1594,7 @@ function escHtml(str) {
     if (!token || !gistId) return;
     syncStatus.textContent = 'Sincronizando…';
     try {
-      const res = await fetch(`https://api.github.com/gists/${gistId}`, {
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' }
-      });
-      if (!res.ok) throw new Error(`GitHub ${res.status}`);
-      const data = await res.json();
+      const data = await ghGetGist(token, gistId);
       const content = data.files?.[GIST_FILE]?.content;
       if (!content) { syncStatus.textContent = 'Gist vacío.'; return; }
       const merged = mergeArchives(loadArchive(), JSON.parse(content));
@@ -1638,51 +1617,23 @@ function escHtml(str) {
       // Pull first to avoid overwriting the other device's new entries
       if (gistId) {
         try {
-          const pullRes = await fetch(`https://api.github.com/gists/${gistId}`, {
-            headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' }
-          });
-          if (pullRes.ok) {
-            const data = await pullRes.json();
-            const content = data.files?.[GIST_FILE]?.content;
-            if (content) {
-              const merged = mergeArchives(loadArchive(), JSON.parse(content));
-              store.set('apt_hunter_archive', JSON.stringify(merged));
-            }
+          const data = await ghGetGist(token, gistId);
+          const content = data.files?.[GIST_FILE]?.content;
+          if (content) {
+            const merged = mergeArchives(loadArchive(), JSON.parse(content));
+            store.set('apt_hunter_archive', JSON.stringify(merged));
           }
         } catch { /* ignore pull errors — push what we have */ }
       }
 
-      const payload = JSON.stringify({
-        description: 'Apt Hunter archive',
-        public: false,
-        files: { [GIST_FILE]: { content: JSON.stringify(loadArchive()) } }
-      });
+      const archiveJson = JSON.stringify(loadArchive());
 
       if (!gistId) {
-        const res = await fetch('https://api.github.com/gists', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/vnd.github+json',
-            'Content-Type': 'application/json'
-          },
-          body: payload
-        });
-        if (!res.ok) throw new Error(`GitHub ${res.status}`);
-        const created = await res.json();
+        const created = await ghCreateGist(token, 'Apt Hunter archive', GIST_FILE, archiveJson);
         store.set('apt_hunter_gist_id', created.id);
         updateSyncStatus();
       } else {
-        const res = await fetch(`https://api.github.com/gists/${gistId}`, {
-          method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/vnd.github+json',
-            'Content-Type': 'application/json'
-          },
-          body: payload
-        });
-        if (!res.ok) throw new Error(`GitHub ${res.status}`);
+        await ghUpdateGist(token, gistId, GIST_FILE, archiveJson);
       }
       syncStatus.textContent = `Sincronizado · ${new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'})}`;
     } catch (e) {
