@@ -946,6 +946,114 @@
 
     #headerBrand .subtitle { margin-bottom: 0; }
 
+    /* ── Settings gear ──────────────────────────────────────────────────────── */
+    #headerRight {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .btn-settings {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-size: 1rem;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      flex-shrink: 0;
+    }
+    .btn-settings:hover { background: var(--surface2); color: var(--text); }
+
+    /* ── Settings panel (slide-in from right) ───────────────────────────────── */
+    .settings-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(44,42,38,0.35);
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+    .settings-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .settings-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(340px, 92vw);
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      z-index: 201;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      box-shadow: -4px 0 24px rgba(44,42,38,0.12);
+    }
+    .settings-panel.open { transform: translateX(0); }
+
+    .settings-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .settings-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      color: var(--text);
+    }
+
+    .btn-settings-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 6px;
+      line-height: 1;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-settings-close:hover { background: var(--surface2); color: var(--text); }
+
+    .settings-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .settings-section-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .settings-sync-status {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 10px;
+      min-height: 1.2em;
+      line-height: 1.5;
+    }
+
     /* Desktop top tab bar */
     .tabs-top {
       display: flex;
@@ -1141,17 +1249,20 @@
 
 <div id="appShell">
 
-  <!-- ── App header: brand + desktop tab bar ─────────────────────────────── -->
+  <!-- ── App header: brand + desktop tab bar + settings ──────────────────── -->
   <header id="appHeader">
     <div id="headerBrand">
       <h1>🏠 Apt Hunter</h1>
       <p class="subtitle">Fotografía un letrero y genera tu mensaje de WhatsApp al instante.</p>
     </div>
-    <nav class="tabs-top">
-      <button class="view-tab active" id="tabScan" data-tab="scan">📷 Escanear</button>
-      <button class="view-tab" id="tabArchive" data-tab="archive">🗂 Archivo</button>
-      <button class="view-tab" id="tabMercado" data-tab="mercado">🏪 Mercado</button>
-    </nav>
+    <div id="headerRight">
+      <nav class="tabs-top">
+        <button class="view-tab active" id="tabScan" data-tab="scan">📷 Escanear</button>
+        <button class="view-tab" id="tabArchive" data-tab="archive">🗂 Archivo</button>
+        <button class="view-tab" id="tabMercado" data-tab="mercado">🏪 Mercado</button>
+      </nav>
+      <button class="btn-settings" id="btnSettings" title="Ajustes">⚙️</button>
+    </div>
   </header>
 
   <!-- ── Top panel: upload col (left) + scorecard (right) ───────────────── -->
@@ -1159,16 +1270,6 @@
   <div id="topPanel" class="tab-active">
 
     <div id="uploadCol">
-
-      <!-- Gist Sync -->
-      <div class="card">
-        <div class="card-label">Sincronización · GitHub Gist</div>
-        <div class="api-row">
-          <input type="password" id="ghToken" placeholder="ghp_..." autocomplete="off" spellcheck="false">
-          <button class="btn btn-ghost" id="saveGhToken">Guardar</button>
-        </div>
-        <div class="sync-status" id="syncStatus"></div>
-      </div>
 
       <!-- Photo capture -->
       <div class="card">
@@ -1292,6 +1393,23 @@
 
 </div><!-- /appShell -->
 
+<!-- ── Settings panel ────────────────────────────────────────────────────── -->
+<div class="settings-backdrop" id="settingsBackdrop"></div>
+<aside class="settings-panel" id="settingsPanel" aria-label="Ajustes">
+  <div class="settings-header">
+    <span class="settings-title">⚙️ Ajustes</span>
+    <button class="btn-settings-close" id="btnSettingsClose" aria-label="Cerrar">✕</button>
+  </div>
+  <div class="settings-body">
+    <div class="settings-section-label">Sincronización · GitHub Gist</div>
+    <div class="api-row">
+      <input type="password" id="ghToken" placeholder="ghp_..." autocomplete="off" spellcheck="false">
+      <button class="btn btn-ghost" id="saveGhToken">Guardar</button>
+    </div>
+    <div class="settings-sync-status" id="syncStatus"></div>
+  </div>
+</aside>
+
 <!-- Mobile bottom tab bar (hidden on desktop via CSS) -->
 <nav class="tabs-bottom" id="tabsBottom">
   <button class="bottom-tab active" data-tab="scan">
@@ -1335,10 +1453,14 @@
   const archiveList = document.getElementById('archiveList');
   const archiveTitle= document.getElementById('archiveTitle');
   const btnCsv      = document.getElementById('btnCsv');
-  const ghTokenEl   = document.getElementById('ghToken');
+  const ghTokenEl      = document.getElementById('ghToken');
   const saveGhTokenBtn = document.getElementById('saveGhToken');
-  const syncStatus  = document.getElementById('syncStatus');
-  const btnSync     = document.getElementById('btnSync');
+  const syncStatus     = document.getElementById('syncStatus');
+  const btnSync        = document.getElementById('btnSync');
+  const btnSettings       = document.getElementById('btnSettings');
+  const settingsPanel     = document.getElementById('settingsPanel');
+  const settingsBackdrop  = document.getElementById('settingsBackdrop');
+  const btnSettingsClose  = document.getElementById('btnSettingsClose');
   const topPanel       = document.getElementById('topPanel');
   const mercadoView    = document.getElementById('mercadoView');
   const tabsBottom     = document.getElementById('tabsBottom');
@@ -1959,6 +2081,25 @@ function escHtml(str) {
   });
 
   btnCsv.addEventListener('click', exportCSV);
+
+  // ── Settings panel ─────────────────────────────────────────────────────────
+  function openSettings() {
+    ghTokenEl.value = getGhToken();
+    settingsPanel.classList.add('open');
+    settingsBackdrop.classList.add('open');
+    // Autofocus token field if empty
+    if (!ghTokenEl.value) setTimeout(() => ghTokenEl.focus(), 260);
+  }
+
+  function closeSettings() {
+    settingsPanel.classList.remove('open');
+    settingsBackdrop.classList.remove('open');
+  }
+
+  btnSettings.addEventListener('click', openSettings);
+  btnSettingsClose.addEventListener('click', closeSettings);
+  settingsBackdrop.addEventListener('click', closeSettings);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSettings(); });
 
   // ── Gist sync ─────────────────────────────────────────────────────────────
   const GIST_FILE = 'apt-hunter-archive.json';
