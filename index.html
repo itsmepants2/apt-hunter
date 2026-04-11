@@ -639,6 +639,72 @@
 
     .archive-field-input:focus { border-color: var(--accent); }
 
+    /* ── Filter bar ─────────────────────────────────────────────────────────── */
+    .archive-filters {
+      margin-bottom: 16px;
+    }
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .filter-select {
+      flex: 1 1 auto;
+      min-width: 0;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.78rem;
+      font-family: inherit;
+      padding: 6px 10px;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .filter-select:focus { border-color: var(--accent); }
+    .filter-clear {
+      flex: 0 0 auto;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-family: inherit;
+      padding: 6px 12px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+    .filter-clear:hover { background: var(--surface2); color: var(--text); }
+
+    /* ── Computed pricing row ────────────────────────────────────────────────── */
+    .archive-computed-row {
+      border-top: 1px solid var(--border);
+      padding: 8px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .archive-computed-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .archive-computed-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+    .archive-computed-value {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
     .archive-card-bottom {
       border-top: 1px solid var(--border);
       padding: 8px 12px 10px;
@@ -1551,6 +1617,7 @@
           <button class="btn-csv" id="btnCsv">⬇ CSV</button>
         </div>
       </div>
+      <div id="archiveFilters"></div>
       <div id="archiveList"></div>
     </div>
 
@@ -2785,6 +2852,16 @@ function escHtml(str) {
     renderScorecard();
   }
 
+  // ── Archive: filter state + helpers ──────────────────────────────────────────
+  const archiveFilter = { sort: '', colonia: '', bedrooms: '', tipo: '' };
+  let mxnToUsdRate = null;
+
+  function parsePriceMxn(str) {
+    if (!str) return null;
+    const n = parseFloat(String(str).replace(/[^0-9.]/g, ''));
+    return isNaN(n) || n === 0 ? null : n;
+  }
+
   // ── Archive: rendering ──────────────────────────────────────────────────────
   function renderArchive() {
     const archive = loadArchive();
@@ -2793,12 +2870,147 @@ function escHtml(str) {
       ? `Archivo · ${count} propiedad${count !== 1 ? 'es' : ''}`
       : 'Archivo';
 
+    // ── Filter bar ──
+    const filtersEl = document.getElementById('archiveFilters');
+    filtersEl.innerHTML = '';
+
+    if (count > 0) {
+      const colonias = [...new Set(archive.map(e => e.neighborhood).filter(Boolean))].sort();
+      const filterRow = document.createElement('div');
+      filterRow.className = 'filter-row';
+
+      // Sort
+      const sortSel = document.createElement('select');
+      sortSel.className = 'filter-select';
+      [
+        { value: '',           label: 'Orden: más reciente' },
+        { value: 'price-asc',  label: 'Precio (menor a mayor)' },
+        { value: 'price-desc', label: 'Precio (mayor a menor)' },
+        { value: 'ppm2-asc',   label: 'Precio/m² (menor a mayor)' },
+        { value: 'ppm2-desc',  label: 'Precio/m² (mayor a menor)' },
+        { value: 'rooms',      label: 'Recámaras' },
+      ].forEach(({ value, label }) => {
+        const opt = document.createElement('option');
+        opt.value = value; opt.textContent = label;
+        if (value === archiveFilter.sort) opt.selected = true;
+        sortSel.appendChild(opt);
+      });
+      sortSel.addEventListener('change', () => { archiveFilter.sort = sortSel.value; renderArchive(); });
+
+      // Colonia
+      const coloniaSel = document.createElement('select');
+      coloniaSel.className = 'filter-select';
+      const colAll = document.createElement('option');
+      colAll.value = ''; colAll.textContent = 'Colonia: todas';
+      coloniaSel.appendChild(colAll);
+      colonias.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        if (c === archiveFilter.colonia) opt.selected = true;
+        coloniaSel.appendChild(opt);
+      });
+      coloniaSel.addEventListener('change', () => { archiveFilter.colonia = coloniaSel.value; renderArchive(); });
+
+      // Bedrooms
+      const bedroomsSel = document.createElement('select');
+      bedroomsSel.className = 'filter-select';
+      [{ value: '', label: 'Recámaras: todas' }, { value: '1', label: '1 rec.' },
+       { value: '2', label: '2 rec.' }, { value: '3', label: '3 rec.' }, { value: '4+', label: '4+ rec.' }]
+        .forEach(({ value, label }) => {
+          const opt = document.createElement('option');
+          opt.value = value; opt.textContent = label;
+          if (value === archiveFilter.bedrooms) opt.selected = true;
+          bedroomsSel.appendChild(opt);
+        });
+      bedroomsSel.addEventListener('change', () => { archiveFilter.bedrooms = bedroomsSel.value; renderArchive(); });
+
+      // Tipo
+      const tipoSel = document.createElement('select');
+      tipoSel.className = 'filter-select';
+      [{ value: '', label: 'Tipo: todos' }, { value: 'Renta', label: 'Renta' }, { value: 'Venta', label: 'Venta' }]
+        .forEach(({ value, label }) => {
+          const opt = document.createElement('option');
+          opt.value = value; opt.textContent = label;
+          if (value === archiveFilter.tipo) opt.selected = true;
+          tipoSel.appendChild(opt);
+        });
+      tipoSel.addEventListener('change', () => { archiveFilter.tipo = tipoSel.value; renderArchive(); });
+
+      // Clear
+      const clearBtn = document.createElement('button');
+      clearBtn.className = 'filter-clear';
+      clearBtn.textContent = 'Limpiar filtros';
+      clearBtn.addEventListener('click', () => {
+        archiveFilter.sort = ''; archiveFilter.colonia = '';
+        archiveFilter.bedrooms = ''; archiveFilter.tipo = '';
+        renderArchive();
+      });
+
+      filterRow.appendChild(sortSel);
+      filterRow.appendChild(coloniaSel);
+      filterRow.appendChild(bedroomsSel);
+      filterRow.appendChild(tipoSel);
+      filterRow.appendChild(clearBtn);
+      filtersEl.appendChild(filterRow);
+    }
+
+    // ── Apply filters + sort ──
+    let filtered = [...archive];
+
+    if (archiveFilter.colonia)
+      filtered = filtered.filter(e => e.neighborhood === archiveFilter.colonia);
+
+    if (archiveFilter.bedrooms) {
+      if (archiveFilter.bedrooms === '4+')
+        filtered = filtered.filter(e => parseInt(e.bedrooms) >= 4);
+      else
+        filtered = filtered.filter(e => String(e.bedrooms) === archiveFilter.bedrooms);
+    }
+
+    if (archiveFilter.tipo)
+      filtered = filtered.filter(e => (e.type || '').toLowerCase().includes(archiveFilter.tipo.toLowerCase()));
+
+    if (archiveFilter.sort === 'price-asc') {
+      filtered.sort((a, b) => {
+        const pa = parsePriceMxn(a.priceMxn), pb = parsePriceMxn(b.priceMxn);
+        if (pa === null && pb === null) return 0;
+        return pa === null ? 1 : pb === null ? -1 : pa - pb;
+      });
+    } else if (archiveFilter.sort === 'price-desc') {
+      filtered.sort((a, b) => {
+        const pa = parsePriceMxn(a.priceMxn), pb = parsePriceMxn(b.priceMxn);
+        if (pa === null && pb === null) return 0;
+        return pa === null ? 1 : pb === null ? -1 : pb - pa;
+      });
+    } else if (archiveFilter.sort === 'ppm2-asc' || archiveFilter.sort === 'ppm2-desc') {
+      const ppm2 = e => {
+        const p = parsePriceMxn(e.priceMxn), s = parseFloat(e.sizeSqm);
+        return (p && s) ? p / s : null;
+      };
+      const dir = archiveFilter.sort === 'ppm2-asc' ? 1 : -1;
+      filtered.sort((a, b) => {
+        const pa = ppm2(a), pb = ppm2(b);
+        if (pa === null && pb === null) return 0;
+        return pa === null ? 1 : pb === null ? -1 : (pa - pb) * dir;
+      });
+    } else if (archiveFilter.sort === 'rooms') {
+      filtered.sort((a, b) => {
+        const ra = parseInt(a.bedrooms), rb = parseInt(b.bedrooms);
+        if (isNaN(ra) && isNaN(rb)) return 0;
+        return isNaN(ra) ? 1 : isNaN(rb) ? -1 : ra - rb;
+      });
+    }
+
     if (count === 0) {
       archiveList.innerHTML = '<div class="archive-empty">📭<br>No hay propiedades guardadas aún.<br>Escanea un letrero o pega un URL para empezar.</div>';
       return;
     }
     archiveList.innerHTML = '';
-    archive.forEach(entry => archiveList.appendChild(buildArchiveCard(entry)));
+    if (filtered.length === 0) {
+      archiveList.innerHTML = '<div class="archive-empty">🔍<br>Ninguna propiedad coincide con los filtros.</div>';
+      return;
+    }
+    filtered.forEach(entry => archiveList.appendChild(buildArchiveCard(entry)));
   }
 
   function buildArchiveCard(entry) {
@@ -2928,6 +3140,7 @@ function escHtml(str) {
       { key: 'parking',      label: '# Estacion.',  type: 'number', placeholder: '—' },
       { key: 'priceMxn',     label: 'Precio (MXN)', type: 'text',   placeholder: '15,000/mes' },
       { key: 'sizeSqm',      label: 'Tamaño (m²)',  type: 'number', placeholder: '—' },
+      { key: 'streetAddress', label: 'Dirección',   type: 'text',   placeholder: 'Calle, número…', wide: true },
       { key: 'neighborhood', label: 'Colonia',       type: 'text',   placeholder: 'Col. Roma…' },
       { key: 'amenities',    label: 'Amenidades',    type: 'text',   placeholder: 'Gym, alberca, roof…', wide: true },
     ];
@@ -3024,6 +3237,50 @@ function escHtml(str) {
 
     card.appendChild(fieldsRow);
 
+    // ── Computed pricing summary row ──
+    const computedRow = document.createElement('div');
+    computedRow.className = 'archive-computed-row';
+
+    function updateComputedRow() {
+      const price = parsePriceMxn(fieldInputs.priceMxn?.value);
+      const sqmVal = parseFloat(fieldInputs.sizeSqm?.value);
+      computedRow.innerHTML = '';
+      if (!price || !sqmVal || sqmVal <= 0) return;
+
+      const sqft    = Math.round(sqmVal * 10.764);
+      const ppm2    = price / sqmVal;
+      const ppsqft  = price / sqft;
+      const priceUsd = mxnToUsdRate ? Math.round(price * mxnToUsdRate) : null;
+
+      const fmt = (n, loc) => Math.round(n).toLocaleString(loc || 'es-MX');
+      const items = [
+        { label: 'Precio USD',  value: priceUsd !== null ? `$${priceUsd.toLocaleString('en-US')}` : '—' },
+        { label: 'Tamaño ft²',  value: sqft.toLocaleString('en-US') + ' ft²' },
+        { label: 'Precio / m²', value: `$${fmt(ppm2)} MXN` },
+        { label: 'Precio / ft²', value: priceUsd !== null ? `$${(ppsqft * mxnToUsdRate).toFixed(2)} USD` : `$${fmt(ppsqft)} MXN` },
+      ];
+
+      items.forEach(({ label, value }) => {
+        const item = document.createElement('div');
+        item.className = 'archive-computed-item';
+        const lbl = document.createElement('div');
+        lbl.className = 'archive-computed-label';
+        lbl.textContent = label;
+        const val = document.createElement('div');
+        val.className = 'archive-computed-value';
+        val.textContent = value;
+        item.appendChild(lbl);
+        item.appendChild(val);
+        computedRow.appendChild(item);
+      });
+    }
+
+    updateComputedRow();
+    // Re-compute when price or size change
+    if (fieldInputs.priceMxn) fieldInputs.priceMxn.addEventListener('blur', updateComputedRow);
+    if (fieldInputs.sizeSqm)  fieldInputs.sizeSqm.addEventListener('blur', updateComputedRow);
+    card.appendChild(computedRow);
+
     // ── Bottom row: notes + delete ──
     const bottom = document.createElement('div');
     bottom.className = 'archive-card-bottom';
@@ -3098,26 +3355,39 @@ function escHtml(str) {
     const archive = loadArchive();
     if (!archive.length) { showToast('No hay entradas para exportar'); return; }
 
-    const headers = ['Fecha','Estado','Tipo','Dirección/Detalles','Precio letrero','Precio (MXN)','Tamaño (m²)','Colonia','Números encontrados','Número contactado','Recámaras','Baños','Estacionamientos','Amenidades','Notas','Fotos adicionales'];
+    const headers = ['Fecha','Estado','Tipo','Dirección/Detalles','Dirección','Precio letrero','Precio (MXN)','Precio (USD)','Tamaño (m²)','Tamaño (ft²)','Precio/m²','Precio/ft²','Colonia','Números encontrados','Número contactado','Recámaras','Baños','Estacionamientos','Amenidades','Notas','Fotos adicionales'];
     const statusLabel = k => STATUSES.find(s => s.key === k)?.label || k || '';
-    const rows = archive.map(e => [
-      new Date(e.date).toLocaleString('es-MX'),
-      statusLabel(e.status || 'spotted'),
-      e.type    || '',
-      [e.address, e.extras].filter(Boolean).join(' · '),
-      e.price   || '',
-      e.priceMxn     || '',
-      e.sizeSqm      || '',
-      e.neighborhood || '',
-      (e.allPhones || []).join('; '),
-      e.contactedNumber || '',
-      e.bedrooms  || '',
-      e.bathrooms || '',
-      e.parking   || '',
-      e.amenities || '',
-      e.notes     || '',
-      (e.extraPhotos || []).length || ''
-    ]);
+    const rows = archive.map(e => {
+      const price  = parsePriceMxn(e.priceMxn);
+      const sqmVal = parseFloat(e.sizeSqm);
+      const sqft   = (sqmVal > 0) ? Math.round(sqmVal * 10.764) : '';
+      const ppm2   = (price && sqmVal > 0) ? Math.round(price / sqmVal) : '';
+      const ppsqft = (price && sqft)        ? Math.round(price / sqft)   : '';
+      const priceUsd = (price && mxnToUsdRate) ? Math.round(price * mxnToUsdRate) : '';
+      return [
+        new Date(e.date).toLocaleString('es-MX'),
+        statusLabel(e.status || 'spotted'),
+        e.type    || '',
+        [e.address, e.extras].filter(Boolean).join(' · '),
+        e.streetAddress   || '',
+        e.price           || '',
+        e.priceMxn        || '',
+        priceUsd          || '',
+        e.sizeSqm         || '',
+        sqft              || '',
+        ppm2              || '',
+        ppsqft            || '',
+        e.neighborhood    || '',
+        (e.allPhones || []).join('; '),
+        e.contactedNumber || '',
+        e.bedrooms        || '',
+        e.bathrooms       || '',
+        e.parking         || '',
+        e.amenities       || '',
+        e.notes           || '',
+        (e.extraPhotos || []).length || '',
+      ];
+    });
 
     const csv = [headers, ...rows]
       .map(row => row.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
@@ -3282,6 +3552,12 @@ function escHtml(str) {
   if (_galleryParam) initGalleryMode(_galleryParam);
 
   renderScorecard();
+
+  // ── Exchange rate: MXN → USD (Frankfurter API, fetched once on load) ────────
+  fetch('https://api.frankfurter.app/latest?from=MXN&to=USD')
+    .then(r => r.json())
+    .then(d => { mxnToUsdRate = d.rates?.USD || null; })
+    .catch(() => {});
 
   // ── PWA Service Worker ─────────────────────────────────────────────────────
   if ('serviceWorker' in navigator) {
