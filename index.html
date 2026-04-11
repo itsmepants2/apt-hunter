@@ -728,6 +728,80 @@
     .bulk-file-item.fi-pending .fi-icon { color: var(--text-muted); }
     .bulk-file-item.fi-active  .fi-icon { color: var(--accent); }
 
+    /* ── Status stepper ───────────────────────────────────────────────────── */
+    .status-bar {
+      display: flex;
+      gap: 4px;
+      padding: 8px 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .status-step {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface2);
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 5px 2px;
+      cursor: pointer;
+      text-align: center;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      line-height: 1.3;
+    }
+
+    .status-step.past {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--surface2);
+    }
+
+    .status-step.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* ── Extra photos ──────────────────────────────────────────────────────── */
+    .archive-thumb-col {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .extra-photos-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      width: 72px;
+    }
+
+    .extra-photo-thumb {
+      width: 32px;
+      height: 32px;
+      object-fit: cover;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn-add-photo {
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      border: 1.5px dashed var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-add-photo:hover { border-color: var(--accent); color: var(--accent); }
+
     /* ── Sync ──────────────────────────────────────────────────────────────── */
     .sync-status {
       font-size: 0.78rem;
@@ -906,6 +980,14 @@
   const saveGhTokenBtn = document.getElementById('saveGhToken');
   const syncStatus  = document.getElementById('syncStatus');
   const btnSync     = document.getElementById('btnSync');
+
+  // ── Constants ─────────────────────────────────────────────────────────────
+  const STATUSES = [
+    { key: 'spotted',   label: 'Visto',       emoji: '👁' },
+    { key: 'contacted', label: 'Contactado',  emoji: '📞' },
+    { key: 'toured',    label: 'Visitado',    emoji: '🚪' },
+    { key: 'decided',   label: 'Decidido',    emoji: '✓'  },
+  ];
 
   // ── Storage helper (fails gracefully in sandboxed iframes) ────────────────
   const store = {
@@ -1201,7 +1283,8 @@ Solo responde con el JSON, sin texto adicional.`;
       contactedNumber:  null,
       contactedDisplay: null,
       whatsappMessage:  result.whatsapp_message || '',
-      notes: '', bedrooms: '', bathrooms: '', parking: '', amenities: ''
+      status: 'spotted', notes: '', bedrooms: '', bathrooms: '', parking: '',
+      priceMxn: '', sizeSqm: '', neighborhood: '', amenities: '', extraPhotos: []
     };
     archive.unshift(entry);
     store.set('apt_hunter_archive', JSON.stringify(archive));
@@ -1662,11 +1745,16 @@ function escHtml(str) {
       contactedNumber:  waNumber,
       contactedDisplay: displayNumber,
       whatsappMessage:  currentResult.whatsapp_message || '',
-      notes:      '',
-      bedrooms:   '',
-      bathrooms:  '',
-      parking:    '',
-      amenities:  ''
+      status:       'spotted',
+      notes:        '',
+      bedrooms:     '',
+      bathrooms:    '',
+      parking:      '',
+      priceMxn:     '',
+      sizeSqm:      '',
+      neighborhood: '',
+      amenities:    '',
+      extraPhotos:  []
     };
     archive.unshift(entry);
     store.set('apt_hunter_archive', JSON.stringify(archive));
@@ -1679,6 +1767,17 @@ function escHtml(str) {
     const idx = archive.findIndex(e => e.id === id);
     if (idx !== -1) {
       archive[idx][key] = value;
+      store.set('apt_hunter_archive', JSON.stringify(archive));
+      gistPush();
+    }
+  }
+
+  function saveArchivePhotoAdd(id, thumbDataUrl) {
+    const archive = loadArchive();
+    const idx = archive.findIndex(e => e.id === id);
+    if (idx !== -1) {
+      if (!archive[idx].extraPhotos) archive[idx].extraPhotos = [];
+      archive[idx].extraPhotos.push(thumbDataUrl);
       store.set('apt_hunter_archive', JSON.stringify(archive));
       gistPush();
     }
@@ -1723,18 +1822,57 @@ function escHtml(str) {
     const top = document.createElement('div');
     top.className = 'archive-card-top';
 
+    // ── Thumbnail column (main + extra photos + add button) ──
+    const thumbCol = document.createElement('div');
+    thumbCol.className = 'archive-thumb-col';
+
     if (entry.thumbnail) {
       const img = document.createElement('img');
       img.className = 'archive-thumb';
       img.src = entry.thumbnail;
       img.alt = 'Foto';
-      top.appendChild(img);
+      thumbCol.appendChild(img);
     } else {
       const ph = document.createElement('div');
       ph.className = 'archive-thumb-placeholder';
       ph.textContent = '🏠';
-      top.appendChild(ph);
+      thumbCol.appendChild(ph);
     }
+
+    // Extra photos strip + add button
+    const strip = document.createElement('div');
+    strip.className = 'extra-photos-strip';
+    (entry.extraPhotos || []).forEach(src => {
+      const ei = document.createElement('img');
+      ei.className = 'extra-photo-thumb';
+      ei.src = src;
+      strip.appendChild(ei);
+    });
+    const addLabel = document.createElement('label');
+    addLabel.className = 'btn-add-photo';
+    addLabel.title = 'Agregar foto';
+    addLabel.textContent = '+';
+    const addInput = document.createElement('input');
+    addInput.type = 'file';
+    addInput.accept = 'image/*';
+    addInput.style.display = 'none';
+    addInput.addEventListener('change', async () => {
+      const file = addInput.files[0];
+      if (!file) return;
+      const dataUrl = await readFileAsDataUrl(file);
+      const thumb = await generateThumbnail(dataUrl);
+      if (!thumb) return;
+      saveArchivePhotoAdd(entry.id, thumb);
+      const ei = document.createElement('img');
+      ei.className = 'extra-photo-thumb';
+      ei.src = thumb;
+      strip.insertBefore(ei, addLabel);
+      addInput.value = '';
+    });
+    addLabel.appendChild(addInput);
+    strip.appendChild(addLabel);
+    thumbCol.appendChild(strip);
+    top.appendChild(thumbCol);
 
     const info = document.createElement('div');
     info.className = 'archive-info';
@@ -1746,12 +1884,35 @@ function escHtml(str) {
     top.appendChild(info);
     card.appendChild(top);
 
+    // ── Status stepper ──
+    const statusBar = document.createElement('div');
+    statusBar.className = 'status-bar';
+    const currentStatusIdx = STATUSES.findIndex(s => s.key === (entry.status || 'spotted'));
+    STATUSES.forEach((s, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'status-step'
+        + (i === currentStatusIdx ? ' active' : i < currentStatusIdx ? ' past' : '');
+      btn.innerHTML = `${s.emoji}<br>${s.label}`;
+      btn.addEventListener('click', () => {
+        saveArchiveField(entry.id, 'status', s.key);
+        statusBar.querySelectorAll('.status-step').forEach((b, j) => {
+          b.className = 'status-step'
+            + (j === i ? ' active' : j < i ? ' past' : '');
+        });
+      });
+      statusBar.appendChild(btn);
+    });
+    card.appendChild(statusBar);
+
     // ── Property fields ──
     const fieldDefs = [
-      { key: 'bedrooms',  label: '# Recámaras',  type: 'number', placeholder: '—' },
-      { key: 'bathrooms', label: '# Baños',       type: 'number', placeholder: '—' },
-      { key: 'parking',   label: '# Estacion.',   type: 'number', placeholder: '—' },
-      { key: 'amenities', label: 'Amenidades',    type: 'text',   placeholder: 'Gym, alberca, roof…', wide: true },
+      { key: 'bedrooms',     label: '# Recámaras',  type: 'number', placeholder: '—' },
+      { key: 'bathrooms',    label: '# Baños',      type: 'number', placeholder: '—' },
+      { key: 'parking',      label: '# Estacion.',  type: 'number', placeholder: '—' },
+      { key: 'priceMxn',     label: 'Precio (MXN)', type: 'text',   placeholder: '15,000/mes' },
+      { key: 'sizeSqm',      label: 'Tamaño (m²)',  type: 'number', placeholder: '—' },
+      { key: 'neighborhood', label: 'Colonia',       type: 'text',   placeholder: 'Col. Roma…' },
+      { key: 'amenities',    label: 'Amenidades',    type: 'text',   placeholder: 'Gym, alberca, roof…', wide: true },
     ];
 
     const fieldsRow = document.createElement('div');
@@ -1808,12 +1969,17 @@ function escHtml(str) {
     const archive = loadArchive();
     if (!archive.length) { showToast('No hay entradas para exportar'); return; }
 
-    const headers = ['Fecha','Tipo','Dirección/Detalles','Precio','Números encontrados','Número contactado','Recámaras','Baños','Estacionamientos','Amenidades','Notas'];
+    const headers = ['Fecha','Estado','Tipo','Dirección/Detalles','Precio letrero','Precio (MXN)','Tamaño (m²)','Colonia','Números encontrados','Número contactado','Recámaras','Baños','Estacionamientos','Amenidades','Notas'];
+    const statusLabel = k => STATUSES.find(s => s.key === k)?.label || k || '';
     const rows = archive.map(e => [
       new Date(e.date).toLocaleString('es-MX'),
+      statusLabel(e.status || 'spotted'),
       e.type    || '',
       [e.address, e.extras].filter(Boolean).join(' · '),
       e.price   || '',
+      e.priceMxn     || '',
+      e.sizeSqm      || '',
+      e.neighborhood || '',
       (e.allPhones || []).join('; '),
       e.contactedNumber || '',
       e.bedrooms  || '',
