@@ -807,6 +807,97 @@
     }
     .btn-add-photo:hover { border-color: var(--accent); color: var(--accent); }
 
+    /* ── Gallery view ─────────────────────────────────────────────────────── */
+    .gallery-back {
+      margin-bottom: 16px;
+    }
+
+    .gallery-status-badge {
+      display: inline-block;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 8px;
+    }
+
+    .gallery-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+
+    .gallery-subtitle {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .gallery-hero {
+      width: 100%;
+      max-height: 380px;
+      object-fit: contain;
+      border-radius: var(--radius);
+      background: var(--surface2);
+      display: block;
+      margin-bottom: 10px;
+      cursor: zoom-in;
+    }
+
+    .gallery-hero-placeholder {
+      width: 100%;
+      height: 200px;
+      border-radius: var(--radius);
+      background: var(--surface2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      margin-bottom: 10px;
+    }
+
+    .gallery-photos-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .gallery-photo {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .gallery-photo:hover { opacity: 0.85; }
+
+    .gallery-date {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 12px;
+      padding-bottom: 24px;
+    }
+
+    /* ── Share button (archive card) ───────────────────────────────────────── */
+    .btn-share {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      padding: 5px 9px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-share:hover { background: var(--surface2); color: var(--text); }
+
     /* ── Sync ──────────────────────────────────────────────────────────────── */
     .sync-status {
       font-size: 0.78rem;
@@ -948,6 +1039,9 @@
     </div>
     <div id="archiveList"></div>
   </div>
+
+  <!-- ── Gallery view (opened via ?property=<id>) ─────────────────────── -->
+  <div id="galleryView" style="display:none;"></div>
 
   <div class="toast" id="toast"></div>
 
@@ -1957,6 +2051,16 @@ function escHtml(str) {
     textarea.rows = 2;
     textarea.addEventListener('blur', () => saveArchiveField(entry.id, 'notes', textarea.value));
 
+    const shareBtn = document.createElement('button');
+    shareBtn.className = 'btn-share';
+    shareBtn.title = 'Compartir galería';
+    shareBtn.textContent = '🔗';
+    shareBtn.addEventListener('click', () => {
+      const url = `${location.origin}${location.pathname}?property=${entry.id}`;
+      navigator.clipboard.writeText(url).then(() => showToast('URL copiada ✓'))
+        .catch(() => showToast(url)); // fallback: show URL in toast
+    });
+
     const delBtn = document.createElement('button');
     delBtn.className = 'btn-delete';
     delBtn.title = 'Eliminar';
@@ -1964,6 +2068,7 @@ function escHtml(str) {
     delBtn.addEventListener('click', () => deleteArchiveEntry(entry.id));
 
     bottom.appendChild(textarea);
+    bottom.appendChild(shareBtn);
     bottom.appendChild(delBtn);
     card.appendChild(bottom);
     return card;
@@ -2007,6 +2112,151 @@ function escHtml(str) {
     a.click();
     URL.revokeObjectURL(url);
   }
+
+  // ── Gallery view ───────────────────────────────────────────────────────────
+  const galleryView = document.getElementById('galleryView');
+
+  function renderGallery(entry) {
+    galleryView.innerHTML = '';
+
+    // Back button
+    const back = document.createElement('button');
+    back.className = 'btn btn-ghost gallery-back';
+    back.textContent = '← Volver al archivo';
+    back.addEventListener('click', () => {
+      history.replaceState(null, '', location.pathname);
+      galleryView.style.display = 'none';
+      document.querySelector('.view-tabs').style.display = '';
+      tabArchive.click();
+    });
+    galleryView.appendChild(back);
+
+    // Status badge
+    const statusDef = STATUSES.find(s => s.key === (entry.status || 'spotted')) || STATUSES[0];
+    const badge = document.createElement('div');
+    badge.className = 'gallery-status-badge';
+    badge.textContent = `${statusDef.emoji} ${statusDef.label}`;
+    galleryView.appendChild(badge);
+
+    // Title + subtitle
+    const title = document.createElement('div');
+    title.className = 'gallery-title';
+    title.textContent = entry.address || entry.type || 'Propiedad';
+    galleryView.appendChild(title);
+
+    const subtitleParts = [entry.type, entry.priceMxn || entry.price, entry.neighborhood].filter(Boolean);
+    if (subtitleParts.length) {
+      const sub = document.createElement('div');
+      sub.className = 'gallery-subtitle';
+      sub.textContent = subtitleParts.join(' · ');
+      galleryView.appendChild(sub);
+    }
+
+    // Photos: hero + thumbnail grid
+    const allPhotos = [entry.thumbnail, ...(entry.extraPhotos || [])].filter(Boolean);
+    if (allPhotos.length) {
+      const hero = document.createElement('img');
+      hero.className = 'gallery-hero';
+      hero.src = allPhotos[0];
+      hero.alt = 'Foto principal';
+      galleryView.appendChild(hero);
+
+      if (allPhotos.length > 1) {
+        const grid = document.createElement('div');
+        grid.className = 'gallery-photos-grid';
+        allPhotos.forEach((src, i) => {
+          const img = document.createElement('img');
+          img.className = 'gallery-photo';
+          img.src = src;
+          img.title = `Foto ${i + 1}`;
+          img.addEventListener('click', () => { hero.src = src; window.scrollTo({top: 0, behavior: 'smooth'}); });
+          grid.appendChild(img);
+        });
+        galleryView.appendChild(grid);
+      }
+    } else {
+      const ph = document.createElement('div');
+      ph.className = 'gallery-hero-placeholder';
+      ph.textContent = '🏠';
+      galleryView.appendChild(ph);
+    }
+
+    // Details card
+    const detailDefs = [
+      { label: 'Tipo',           value: entry.type },
+      { label: 'Precio (MXN)',   value: entry.priceMxn },
+      { label: 'Precio letrero', value: entry.price },
+      { label: 'Tamaño',         value: entry.sizeSqm ? `${entry.sizeSqm} m²` : null },
+      { label: 'Colonia',        value: entry.neighborhood },
+      { label: 'Recámaras',      value: entry.bedrooms },
+      { label: 'Baños',          value: entry.bathrooms },
+      { label: 'Estacionam.',    value: entry.parking },
+      { label: 'Amenidades',     value: entry.amenities },
+    ].filter(d => d.value);
+
+    if (detailDefs.length) {
+      const dc = document.createElement('div');
+      dc.className = 'card';
+      const dg = document.createElement('div');
+      dg.className = 'listing-grid';
+      detailDefs.forEach(({ label, value }) => {
+        const item = document.createElement('div');
+        item.className = 'listing-item';
+        item.innerHTML = `<div class="listing-item-label">${escHtml(label)}</div>`
+          + `<div class="listing-item-value">${escHtml(String(value))}</div>`;
+        dg.appendChild(item);
+      });
+      dc.appendChild(dg);
+      galleryView.appendChild(dc);
+    }
+
+    // Notes
+    if (entry.notes) {
+      const nc = document.createElement('div');
+      nc.className = 'card';
+      nc.innerHTML = `<div class="card-label">Notas</div>`
+        + `<div style="font-size:0.9rem;line-height:1.6;white-space:pre-wrap;">${escHtml(entry.notes)}</div>`;
+      galleryView.appendChild(nc);
+    }
+
+    // Timestamp
+    const dateDiv = document.createElement('div');
+    dateDiv.className = 'gallery-date';
+    dateDiv.textContent = `Guardado ${new Date(entry.date).toLocaleString('es-MX', {
+      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    })}`;
+    galleryView.appendChild(dateDiv);
+  }
+
+  async function initGalleryMode(propertyId) {
+    document.querySelector('.view-tabs').style.display = 'none';
+    document.getElementById('scanView').style.display = 'none';
+    document.getElementById('archiveView').style.display = 'none';
+    galleryView.style.display = 'block';
+    galleryView.innerHTML = '<p style="text-align:center;padding:48px 0;color:var(--text-muted);">Cargando…</p>';
+
+    // Try localStorage first
+    let entry = loadArchive().find(e => String(e.id) === String(propertyId));
+
+    // Pull from Gist if not found locally
+    if (!entry && getGhToken() && getGistId()) {
+      await gistPull();
+      entry = loadArchive().find(e => String(e.id) === String(propertyId));
+    }
+
+    if (!entry) {
+      galleryView.innerHTML = '<div style="text-align:center;padding:48px 0;color:var(--text-muted);">'
+        + '📭<br><br>Propiedad no encontrada.<br>'
+        + '<small>Abre primero el archivo en este dispositivo para sincronizar.</small></div>';
+      return;
+    }
+
+    renderGallery(entry);
+  }
+
+  // Check for gallery mode on load
+  const _galleryParam = new URLSearchParams(location.search).get('property');
+  if (_galleryParam) initGalleryMode(_galleryParam);
 
   // ── PWA Service Worker ─────────────────────────────────────────────────────
   if ('serviceWorker' in navigator) {
