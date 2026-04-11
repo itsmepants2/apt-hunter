@@ -28,9 +28,6 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100dvh;
-      padding: 16px;
-      max-width: 600px;
-      margin: 0 auto;
     }
 
     h1 {
@@ -428,43 +425,7 @@
 
     .toast.show { transform: translateX(-50%) translateY(0); }
 
-    @media (max-width: 400px) {
-      body { padding: 12px; }
-      h1 { font-size: 1.3rem; }
-      .status-bar { padding: 6px 8px; gap: 3px; }
-      .status-step { font-size: 0.62rem; padding: 4px 1px; }
-    }
-
-    /* ── View tabs ─────────────────────────────────────────────────────────── */
-    .view-tabs {
-      display: flex;
-      gap: 4px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 4px;
-      margin-bottom: 20px;
-    }
-
-    .view-tab {
-      flex: 1;
-      border: none;
-      border-radius: 7px;
-      background: transparent;
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      font-weight: 600;
-      padding: 9px;
-      cursor: pointer;
-      transition: background 0.15s, color 0.15s;
-    }
-
-    .view-tab.active { background: var(--accent); color: #fff; }
-
     /* ── Archive view ──────────────────────────────────────────────────────── */
-    #archiveView { display: none; }
-    #archiveView.visible { display: block; }
-
     .archive-header {
       display: flex;
       align-items: center;
@@ -968,121 +929,383 @@
     }
     .btn-sync:hover { background: var(--border); }
     .btn-sync:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── App shell & layout ──────────────────────────────────────────────────── */
+    #appShell {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    #appHeader {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    #headerBrand .subtitle { margin-bottom: 0; }
+
+    /* Desktop top tab bar */
+    .tabs-top {
+      display: flex;
+      gap: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 4px;
+      flex-shrink: 0;
+      align-self: flex-start;
+    }
+
+    .view-tab {
+      border: none;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 9px 14px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .view-tab.active { background: var(--accent); color: #fff; }
+
+    /* Top panel: upload col + scorecard */
+    #topPanel {
+      margin-bottom: 20px;
+    }
+
+    /* Scorecard */
+    .scorecard-toggle {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 9px 14px;
+      cursor: pointer;
+      text-align: left;
+      margin-bottom: 10px;
+      transition: background 0.15s;
+    }
+    .scorecard-toggle:hover { background: var(--border); }
+
+    .scorecard-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat-tile {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stat-tile-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-muted);
+    }
+
+    .stat-tile-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+      word-break: break-word;
+    }
+
+    .stat-tile-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Mobile bottom tab bar */
+    .tabs-bottom {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 100;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    .bottom-tab {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 10px 4px 8px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      transition: color 0.15s;
+    }
+
+    .bottom-tab .tab-icon { font-size: 1.35rem; line-height: 1; }
+    .bottom-tab.active { color: var(--accent); }
+
+    /* Mercado placeholder */
+    .mercado-placeholder {
+      text-align: center;
+      padding: 80px 24px;
+      color: var(--text-muted);
+      line-height: 1.8;
+    }
+    .mercado-placeholder-icon { font-size: 3rem; margin-bottom: 12px; }
+    .mercado-placeholder-title { font-size: 1.1rem; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .mercado-placeholder-body { font-size: 0.9rem; }
+
+    /* ── Mobile layout (< 768px) ──────────────────────────────────────────────── */
+    @media (max-width: 767px) {
+      body { padding: 0; padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
+
+      #appShell { padding: 16px 16px 0; }
+
+      /* Desktop top tabs: hidden on mobile */
+      #appHeader .tabs-top { display: none; }
+
+      /* Top panel hidden on mobile unless scan tab is active */
+      #topPanel { display: none; }
+      #topPanel.tab-active { display: block; }
+
+      /* Scorecard: collapsed by default, toggle reveals it */
+      .scorecard-body { display: none; }
+      .scorecard-body.expanded { display: grid; }
+
+      /* Make the upload zone taller and more dominant */
+      .capture-zone { min-height: 260px; }
+
+      /* Bigger analyze button */
+      .btn-analyze { padding: 16px; font-size: 1.05rem; }
+
+      /* Status stepper small screen */
+      .status-step { font-size: 0.62rem; padding: 4px 1px; }
+    }
+
+    /* ── Desktop layout (>= 768px) ────────────────────────────────────────────── */
+    @media (min-width: 768px) {
+      body { padding: 0; }
+
+      #appShell { padding: 24px 24px 0; }
+
+      #appHeader { align-items: center; margin-bottom: 24px; }
+
+      /* Top panel: always visible, two columns */
+      #topPanel {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+        margin-bottom: 24px;
+      }
+
+      #uploadCol {
+        flex: 0 0 38%;
+        min-width: 0;
+      }
+
+      #scorecard {
+        flex: 1;
+        min-width: 0;
+      }
+
+      /* Scorecard toggle hidden on desktop — body always visible */
+      .scorecard-toggle { display: none; }
+      .scorecard-body { display: grid; } /* always expanded */
+
+      /* Bottom tab bar: hidden on desktop */
+      .tabs-bottom { display: none; }
+    }
   </style>
 </head>
 <body>
 
-  <h1>🏠 Apt Hunter</h1>
-  <p class="subtitle">Fotografía un letrero y genera tu mensaje de WhatsApp al instante.</p>
+<div id="appShell">
 
-  <!-- View toggle -->
-  <div class="view-tabs">
-    <button class="view-tab active" id="tabScan">📷 Escanear</button>
-    <button class="view-tab" id="tabArchive">🗂 Archivo</button>
-  </div>
-
-  <!-- ── Scan view ──────────────────────────────────────────────────────── -->
-  <div id="scanView">
-
-  <!-- Gist Sync -->
-  <div class="card">
-    <div class="card-label">Sincronización · GitHub Gist</div>
-    <div class="api-row">
-      <input type="password" id="ghToken" placeholder="ghp_..." autocomplete="off" spellcheck="false">
-      <button class="btn btn-ghost" id="saveGhToken">Guardar</button>
+  <!-- ── App header: brand + desktop tab bar ─────────────────────────────── -->
+  <header id="appHeader">
+    <div id="headerBrand">
+      <h1>🏠 Apt Hunter</h1>
+      <p class="subtitle">Fotografía un letrero y genera tu mensaje de WhatsApp al instante.</p>
     </div>
-    <div class="sync-status" id="syncStatus"></div>
-  </div>
+    <nav class="tabs-top">
+      <button class="view-tab active" id="tabScan" data-tab="scan">📷 Escanear</button>
+      <button class="view-tab" id="tabArchive" data-tab="archive">🗂 Archivo</button>
+      <button class="view-tab" id="tabMercado" data-tab="mercado">🏪 Mercado</button>
+    </nav>
+  </header>
 
-  <!-- Photo capture -->
-  <div class="card">
-    <div class="card-label">Foto del letrero</div>
-    <label class="capture-label" id="captureLabel">
-      <input type="file" id="fileUpload" accept="image/*">
-      <div class="capture-zone" id="captureZone">
-        <div class="capture-icon">📷</div>
-        <div class="capture-hint">Toca para subir foto</div>
-        <div class="capture-overlay">
-          <div class="capture-icon">🔄</div>
-          <div style="color:#fff;font-size:0.85rem;">Cambiar foto</div>
+  <!-- ── Top panel: upload col (left) + scorecard (right) ───────────────── -->
+  <!-- Always visible on desktop · scan-only on mobile (via .tab-active) -->
+  <div id="topPanel" class="tab-active">
+
+    <div id="uploadCol">
+
+      <!-- Gist Sync -->
+      <div class="card">
+        <div class="card-label">Sincronización · GitHub Gist</div>
+        <div class="api-row">
+          <input type="password" id="ghToken" placeholder="ghp_..." autocomplete="off" spellcheck="false">
+          <button class="btn btn-ghost" id="saveGhToken">Guardar</button>
+        </div>
+        <div class="sync-status" id="syncStatus"></div>
+      </div>
+
+      <!-- Photo capture -->
+      <div class="card">
+        <div class="card-label">Foto del letrero</div>
+        <label class="capture-label" id="captureLabel">
+          <input type="file" id="fileUpload" accept="image/*">
+          <div class="capture-zone" id="captureZone">
+            <div class="capture-icon">📷</div>
+            <div class="capture-hint">Toca para subir foto</div>
+            <div class="capture-overlay">
+              <div class="capture-icon">🔄</div>
+              <div style="color:#fff;font-size:0.85rem;">Cambiar foto</div>
+            </div>
+          </div>
+        </label>
+        <div class="btn-row" style="margin-top:10px;">
+          <label class="btn btn-ghost" style="cursor:pointer;">
+            <input type="file" id="fileCamera" accept="image/*" capture="environment" style="display:none;">
+            📷 Cámara
+          </label>
+          <button class="btn btn-ghost" id="btnClear" style="display:none;">✕ Limpiar</button>
         </div>
       </div>
-    </label>
-    <div class="btn-row" style="margin-top:10px;">
-      <label class="btn btn-ghost" style="cursor:pointer;">
-        <input type="file" id="fileCamera" accept="image/*" capture="environment" style="display:none;">
-        📷 Cámara
-      </label>
-      <button class="btn btn-ghost" id="btnClear" style="display:none;">✕ Limpiar</button>
-    </div>
-  </div>
 
-  <!-- Analyze -->
-  <button class="btn btn-analyze" id="btnAnalyze" disabled>Analizar letrero</button>
+      <!-- Analyze -->
+      <button class="btn btn-analyze" id="btnAnalyze" disabled>Analizar letrero</button>
 
-  <!-- Error -->
-  <div class="error-box" id="errorBox"></div>
+      <!-- Error -->
+      <div class="error-box" id="errorBox"></div>
 
-  <!-- Results -->
-  <div class="results" id="results">
+    </div><!-- /uploadCol -->
 
-    <div class="card">
-      <div class="card-label">Información extraída</div>
-      <div class="listing-grid" id="listingGrid"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-label">Mensaje generado</div>
-      <div class="message-box" id="messageBox"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-label">Abrir en WhatsApp</div>
-      <div class="multi-contact" id="contactLinks"></div>
-    </div>
-
-  </div>
-
-  <!-- Bulk upload -->
-  <div class="card" id="bulkCard" style="margin-top:16px;">
-    <div class="card-label">Carga masiva</div>
-
-    <label class="bulk-drop" id="bulkDrop">
-      <input type="file" id="bulkInput" accept="image/*" multiple>
-      <div style="font-size:1.8rem;">🖼️</div>
-      <div class="bulk-drop-hint">Toca para seleccionar varias fotos<br>o arrastra aquí</div>
-      <div class="bulk-file-count" id="bulkCount" style="display:none;"></div>
-    </label>
-
-    <button class="btn btn-bulk-run" id="btnBulkRun" disabled>Analizar y guardar todas</button>
-
-    <div class="bulk-progress-wrap" id="bulkProgressWrap">
-      <div class="bulk-progress-bar-track">
-        <div class="bulk-progress-bar-fill" id="bulkProgressFill"></div>
-      </div>
-      <div class="bulk-status" id="bulkStatus"></div>
-      <div class="bulk-file-list" id="bulkFileList"></div>
-    </div>
-  </div>
-
-  </div><!-- /scanView -->
-
-  <!-- ── Archive view ──────────────────────────────────────────────────── -->
-  <div id="archiveView">
-    <div class="archive-header">
-      <span class="archive-title" id="archiveTitle">Archivo</span>
-      <div style="display:flex;gap:6px;">
-        <button class="btn-sync" id="btnSync">↻ Sync</button>
-        <button class="btn-csv" id="btnCsv">⬇ CSV</button>
+    <!-- Scorecard -->
+    <div id="scorecard">
+      <button class="scorecard-toggle" id="scorecardToggle">Ver resumen ▼</button>
+      <div class="scorecard-body" id="scorecardBody">
+        <!-- populated by renderScorecard() -->
       </div>
     </div>
-    <div id="archiveList"></div>
-  </div>
 
-  <!-- ── Gallery view (opened via ?property=<id>) ─────────────────────── -->
-  <div id="galleryView" style="display:none;"></div>
+  </div><!-- /topPanel -->
 
-  <div class="toast" id="toast"></div>
+  <!-- ── Tab content area ──────────────────────────────────────────────────── -->
+  <div id="tabContent">
+
+    <!-- Scan view: only results + bulk (upload is in topPanel) -->
+    <div id="scanView">
+
+      <!-- Results -->
+      <div class="results" id="results">
+
+        <div class="card">
+          <div class="card-label">Información extraída</div>
+          <div class="listing-grid" id="listingGrid"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">Mensaje generado</div>
+          <div class="message-box" id="messageBox"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">Abrir en WhatsApp</div>
+          <div class="multi-contact" id="contactLinks"></div>
+        </div>
+
+      </div><!-- /results -->
+
+      <!-- Bulk upload -->
+      <div class="card" id="bulkCard" style="margin-top:16px;">
+        <div class="card-label">Carga masiva</div>
+
+        <label class="bulk-drop" id="bulkDrop">
+          <input type="file" id="bulkInput" accept="image/*" multiple>
+          <div style="font-size:1.8rem;">🖼️</div>
+          <div class="bulk-drop-hint">Toca para seleccionar varias fotos<br>o arrastra aquí</div>
+          <div class="bulk-file-count" id="bulkCount" style="display:none;"></div>
+        </label>
+
+        <button class="btn btn-bulk-run" id="btnBulkRun" disabled>Analizar y guardar todas</button>
+
+        <div class="bulk-progress-wrap" id="bulkProgressWrap">
+          <div class="bulk-progress-bar-track">
+            <div class="bulk-progress-bar-fill" id="bulkProgressFill"></div>
+          </div>
+          <div class="bulk-status" id="bulkStatus"></div>
+          <div class="bulk-file-list" id="bulkFileList"></div>
+        </div>
+      </div>
+
+    </div><!-- /scanView -->
+
+    <!-- Archive view -->
+    <div id="archiveView" style="display:none;">
+      <div class="archive-header">
+        <span class="archive-title" id="archiveTitle">Archivo</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-sync" id="btnSync">↻ Sync</button>
+          <button class="btn-csv" id="btnCsv">⬇ CSV</button>
+        </div>
+      </div>
+      <div id="archiveList"></div>
+    </div>
+
+    <!-- Mercado view (placeholder) -->
+    <div id="mercadoView" style="display:none;">
+      <div class="mercado-placeholder">
+        <div class="mercado-placeholder-icon">🏪</div>
+        <div class="mercado-placeholder-title">Mercado — próximamente</div>
+        <div class="mercado-placeholder-body">
+          Comparativa de precios por zona, tendencias del mercado<br>
+          y análisis de valor en tiempo real.
+        </div>
+      </div>
+    </div>
+
+    <!-- Gallery view (opened via ?property=<id>) -->
+    <div id="galleryView" style="display:none;"></div>
+
+  </div><!-- /tabContent -->
+
+</div><!-- /appShell -->
+
+<!-- Mobile bottom tab bar (hidden on desktop via CSS) -->
+<nav class="tabs-bottom" id="tabsBottom">
+  <button class="bottom-tab active" data-tab="scan">
+    <span class="tab-icon">📷</span>Escanear
+  </button>
+  <button class="bottom-tab" data-tab="archive">
+    <span class="tab-icon">🗂</span>Archivo
+  </button>
+  <button class="bottom-tab" data-tab="mercado">
+    <span class="tab-icon">🏪</span>Mercado
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
 
 <script src="src/services.js"></script>
 <script>
@@ -1116,6 +1339,12 @@
   const saveGhTokenBtn = document.getElementById('saveGhToken');
   const syncStatus  = document.getElementById('syncStatus');
   const btnSync     = document.getElementById('btnSync');
+  const topPanel       = document.getElementById('topPanel');
+  const mercadoView    = document.getElementById('mercadoView');
+  const tabsBottom     = document.getElementById('tabsBottom');
+  const scorecardToggle = document.getElementById('scorecardToggle');
+  const scorecardBody  = document.getElementById('scorecardBody');
+  const tabMercado     = document.getElementById('tabMercado');
 
   // ── Constants ─────────────────────────────────────────────────────────────
   const STATUSES = [
@@ -1413,6 +1642,7 @@ Solo responde con el JSON, sin texto adicional.`;
     archive.unshift(entry);
     store.set('apt_hunter_archive', JSON.stringify(archive));
     gistPush();
+    renderScorecard();
     return true;
   }
 
@@ -1693,21 +1923,39 @@ function escHtml(str) {
       .replace(/"/g, '&quot;');
   }
 
-  // ── View toggle ────────────────────────────────────────────────────────────
-  tabScan.addEventListener('click', () => {
-    tabScan.classList.add('active');
-    tabArchive.classList.remove('active');
-    scanView.style.display = '';
-    archiveView.classList.remove('visible');
+  // ── Tab switching ──────────────────────────────────────────────────────────
+  function switchTab(name) {
+    // Sync active state on both tab bars
+    document.querySelectorAll('[data-tab]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === name);
+    });
+
+    // Show/hide tab content views
+    scanView.style.display    = name === 'scan'    ? '' : 'none';
+    archiveView.style.display = name === 'archive' ? '' : 'none';
+    mercadoView.style.display = name === 'mercado' ? '' : 'none';
+
+    // Top panel: always visible on desktop (CSS handles it);
+    // on mobile it shows only when scan tab is active
+    topPanel.classList.toggle('tab-active', name === 'scan');
+
+    if (name === 'archive') {
+      renderArchive();
+      gistPull();
+    }
+
+    renderScorecard();
+  }
+
+  // Wire all tab buttons (top bar + bottom bar)
+  document.querySelectorAll('[data-tab]').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
-  tabArchive.addEventListener('click', () => {
-    tabArchive.classList.add('active');
-    tabScan.classList.remove('active');
-    scanView.style.display = 'none';
-    archiveView.classList.add('visible');
-    renderArchive();
-    gistPull();
+  // ── Scorecard toggle (mobile) ─────────────────────────────────────────────
+  scorecardToggle.addEventListener('click', () => {
+    const expanded = scorecardBody.classList.toggle('expanded');
+    scorecardToggle.textContent = expanded ? 'Ver resumen ▲' : 'Ver resumen ▼';
   });
 
   btnCsv.addEventListener('click', exportCSV);
@@ -1802,6 +2050,7 @@ function escHtml(str) {
       const merged = mergeArchives(loadArchive(), JSON.parse(content));
       store.set('apt_hunter_archive', JSON.stringify(merged));
       renderArchive();
+      renderScorecard();
       syncStatus.textContent = `Sincronizado · ${new Date().toLocaleTimeString('es-MX', {hour:'2-digit', minute:'2-digit'})}`;
     } catch (e) {
       syncStatus.textContent = `Error al sincronizar: ${e.message}`;
@@ -1841,6 +2090,74 @@ function escHtml(str) {
     } catch (e) {
       syncStatus.textContent = `Error al guardar en Gist: ${e.message}`;
     }
+  }
+
+  // ── Scorecard ──────────────────────────────────────────────────────────────
+  function renderScorecard() {
+    const archive = loadArchive();
+    const total = archive.length;
+
+    // Average priceMxn
+    const prices = archive
+      .map(e => parseFloat(String(e.priceMxn || '').replace(/[^0-9.]/g, '')))
+      .filter(n => !isNaN(n) && n > 0);
+    const avgPrice = prices.length
+      ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length)
+      : null;
+
+    // Average price per m²
+    const perSqm = archive
+      .map(e => {
+        const p = parseFloat(String(e.priceMxn || '').replace(/[^0-9.]/g, ''));
+        const s = parseFloat(String(e.sizeSqm  || '').replace(/[^0-9.]/g, ''));
+        return (p > 0 && s > 0) ? p / s : null;
+      })
+      .filter(n => n !== null);
+    const avgPerSqm = perSqm.length
+      ? Math.round(perSqm.reduce((a, b) => a + b, 0) / perSqm.length)
+      : null;
+
+    // Best value neighborhood (≥2 entries, lowest avg price/m²)
+    const byNhd = {};
+    archive.forEach(e => {
+      if (!e.neighborhood) return;
+      const p = parseFloat(String(e.priceMxn || '').replace(/[^0-9.]/g, ''));
+      const s = parseFloat(String(e.sizeSqm  || '').replace(/[^0-9.]/g, ''));
+      if (!(p > 0) || !(s > 0)) return;
+      const k = e.neighborhood.trim();
+      (byNhd[k] = byNhd[k] || []).push(p / s);
+    });
+    let bestNhd = null, bestAvg = Infinity;
+    Object.entries(byNhd).forEach(([name, vals]) => {
+      if (vals.length < 2) return;
+      const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+      if (avg < bestAvg) { bestAvg = avg; bestNhd = name; }
+    });
+
+    const fmt = n => n.toLocaleString('es-MX');
+
+    scorecardBody.innerHTML = `
+      <div class="stat-tile">
+        <div class="stat-tile-label">Propiedades</div>
+        <div class="stat-tile-value">${total}</div>
+        <div class="stat-tile-sub">rastreadas</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-tile-label">Precio prom.</div>
+        <div class="stat-tile-value">${avgPrice !== null ? '$' + fmt(avgPrice) : '—'}</div>
+        <div class="stat-tile-sub">MXN / mes</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-tile-label">Precio / m²</div>
+        <div class="stat-tile-value">${avgPerSqm !== null ? '$' + fmt(avgPerSqm) : '—'}</div>
+        <div class="stat-tile-sub">promedio</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-tile-label">Mejor zona</div>
+        <div class="stat-tile-value" style="font-size:${bestNhd && bestNhd.length > 10 ? '1rem' : '1.4rem'}">${escHtml(bestNhd || '—')}</div>
+        <div class="stat-tile-sub">${bestNhd ? 'menor precio/m²' : 'sin datos suficientes'}</div>
+      </div>
+    `;
   }
 
   // ── Archive: persistence ────────────────────────────────────────────────────
@@ -1907,6 +2224,7 @@ function escHtml(str) {
     store.set('apt_hunter_archive', JSON.stringify(archive));
     gistPush();
     renderArchive();
+    renderScorecard();
   }
 
   // ── Archive: rendering ──────────────────────────────────────────────────────
@@ -2212,8 +2530,10 @@ function escHtml(str) {
     back.addEventListener('click', () => {
       history.replaceState(null, '', location.pathname);
       galleryView.style.display = 'none';
-      document.querySelector('.view-tabs').style.display = '';
-      tabArchive.click();
+      document.getElementById('appHeader').style.display = '';
+      document.getElementById('topPanel').style.display = '';
+      document.getElementById('tabsBottom').style.display = '';
+      switchTab('archive');
     });
     galleryView.appendChild(back);
 
@@ -2315,7 +2635,9 @@ function escHtml(str) {
   }
 
   async function initGalleryMode(propertyId) {
-    document.querySelector('.view-tabs').style.display = 'none';
+    document.getElementById('appHeader').style.display = 'none';
+    document.getElementById('topPanel').style.display = 'none';
+    document.getElementById('tabsBottom').style.display = 'none';
     document.getElementById('scanView').style.display = 'none';
     document.getElementById('archiveView').style.display = 'none';
     galleryView.style.display = 'block';
@@ -2343,6 +2665,8 @@ function escHtml(str) {
   // Check for gallery mode on load
   const _galleryParam = new URLSearchParams(location.search).get('property');
   if (_galleryParam) initGalleryMode(_galleryParam);
+
+  renderScorecard();
 
   // ── PWA Service Worker ─────────────────────────────────────────────────────
   if ('serviceWorker' in navigator) {
