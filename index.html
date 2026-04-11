@@ -930,6 +930,128 @@
     .btn-sync:hover { background: var(--border); }
     .btn-sync:disabled { opacity: 0.4; cursor: not-allowed; }
 
+    /* ── URL import ────────────────────────────────────────────────────────────── */
+    .url-import-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .url-import-status {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+      min-height: 1.1em;
+      line-height: 1.4;
+    }
+    .url-import-status.err { color: var(--error); }
+
+    /* ── URL preview card ──────────────────────────────────────────────────────── */
+    #urlPreviewCard {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .url-preview-photos {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 14px 14px 6px;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+    .url-preview-photos::-webkit-scrollbar { height: 4px; }
+    .url-preview-photos::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .url-preview-photo {
+      width: 130px;
+      height: 96px;
+      object-fit: cover;
+      border-radius: 8px;
+      flex-shrink: 0;
+      scroll-snap-align: start;
+      background: var(--surface2);
+    }
+
+    .url-no-photos {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      padding: 14px 16px 6px;
+      font-style: italic;
+    }
+
+    .url-preview-source {
+      padding: 6px 14px 10px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      overflow: hidden;
+    }
+
+    .url-preview-source-label {
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.65rem;
+      letter-spacing: 0.5px;
+      flex-shrink: 0;
+    }
+
+    .url-preview-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+    .url-preview-link:hover { text-decoration: underline; color: var(--text); }
+
+    .url-preview-fields {
+      padding: 10px 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .url-preview-actions {
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px 12px;
+    }
+
+    .url-preview-actions .btn-analyze {
+      flex: 1;
+      padding: 11px;
+      font-size: 0.95rem;
+    }
+
+    /* ── View listing button (archive card) ──────────────────────────────────── */
+    .btn-view-listing {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 5px 9px;
+      text-decoration: none;
+      flex-shrink: 0;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .btn-view-listing:hover { background: var(--border); }
+
     /* ── App shell & layout ──────────────────────────────────────────────────── */
     #appShell {
       max-width: 1200px;
@@ -1300,6 +1422,16 @@
       <!-- Error -->
       <div class="error-box" id="errorBox"></div>
 
+      <!-- URL import -->
+      <div class="card" style="margin-top:12px;">
+        <div class="card-label">O pega el URL del anuncio</div>
+        <div class="url-import-row">
+          <input type="url" id="urlImportInput" placeholder="https://inmuebles24.com/…">
+          <button class="btn btn-ghost" id="btnAnalyzeUrl">Analizar</button>
+        </div>
+        <div class="url-import-status" id="urlImportStatus"></div>
+      </div>
+
     </div><!-- /uploadCol -->
 
     <!-- Scorecard -->
@@ -1317,6 +1449,9 @@
 
     <!-- Scan view: only results + bulk (upload is in topPanel) -->
     <div id="scanView">
+
+      <!-- URL import preview card (populated + shown by JS after URL analysis) -->
+      <div id="urlPreviewCard" style="display:none;"></div>
 
       <!-- Results -->
       <div class="results" id="results">
@@ -1432,6 +1567,7 @@
   let imageMime = 'image/jpeg';
   let currentResult = null;
   let currentThumbnail = null;
+  let urlPreviewData = null;  // {url, extracted, photos} — set by analyzeUrl()
 
   // ── Elements ───────────────────────────────────────────────────────────────
   const captureZone = document.getElementById('captureZone');
@@ -1461,12 +1597,16 @@
   const settingsPanel     = document.getElementById('settingsPanel');
   const settingsBackdrop  = document.getElementById('settingsBackdrop');
   const btnSettingsClose  = document.getElementById('btnSettingsClose');
-  const topPanel       = document.getElementById('topPanel');
-  const mercadoView    = document.getElementById('mercadoView');
-  const tabsBottom     = document.getElementById('tabsBottom');
+  const topPanel        = document.getElementById('topPanel');
+  const mercadoView     = document.getElementById('mercadoView');
+  const tabsBottom      = document.getElementById('tabsBottom');
   const scorecardToggle = document.getElementById('scorecardToggle');
-  const scorecardBody  = document.getElementById('scorecardBody');
-  const tabMercado     = document.getElementById('tabMercado');
+  const scorecardBody   = document.getElementById('scorecardBody');
+  const tabMercado      = document.getElementById('tabMercado');
+  const urlImportInput  = document.getElementById('urlImportInput');
+  const btnAnalyzeUrl   = document.getElementById('btnAnalyzeUrl');
+  const urlImportStatus = document.getElementById('urlImportStatus');
+  const urlPreviewCard  = document.getElementById('urlPreviewCard');
 
   // ── Constants ─────────────────────────────────────────────────────────────
   const STATUSES = [
@@ -1675,6 +1815,238 @@ Solo responde con el JSON, sin texto adicional.`;
       setLoading(false);
     }
   }
+
+  // ── URL import ─────────────────────────────────────────────────────────────
+
+  // Extract candidate property photo URLs from raw HTML.
+  // Prioritises og:image and JSON-LD; falls back to sized <img> tags.
+  function extractPhotosFromHtml(html, baseUrl) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const photos = [];
+    const seen = new Set();
+
+    function add(src) {
+      if (!src) return;
+      try {
+        const abs = new URL(src, baseUrl).href;
+        if (!seen.has(abs) && (abs.startsWith('http://') || abs.startsWith('https://'))) {
+          seen.add(abs);
+          photos.push(abs);
+        }
+      } catch { /* skip malformed URLs */ }
+    }
+
+    // 1 — og:image meta tags (most reliable on listing portals)
+    doc.querySelectorAll('meta[property="og:image"], meta[property="og:image:url"]')
+      .forEach(el => add(el.getAttribute('content')));
+
+    // 2 — JSON-LD image arrays
+    doc.querySelectorAll('script[type="application/ld+json"]').forEach(el => {
+      try {
+        const objs = [].concat(JSON.parse(el.textContent));
+        objs.forEach(function walk(obj) {
+          if (!obj || typeof obj !== 'object') return;
+          [].concat(obj.image || []).forEach(img =>
+            add(typeof img === 'string' ? img : (img.url || img.contentUrl)));
+          if (obj['@graph']) [].concat(obj['@graph']).forEach(walk);
+        });
+      } catch { /* ignore malformed JSON-LD */ }
+    });
+
+    // 3 — <img> tags with declared large dimensions (fallback if portal has no meta)
+    if (photos.length < 3) {
+      doc.querySelectorAll('img[src]').forEach(el => {
+        const src = el.getAttribute('src') || '';
+        if (src.startsWith('data:')) return;
+        const w = parseInt(el.getAttribute('width')  || '0');
+        const h = parseInt(el.getAttribute('height') || '0');
+        if ((w > 0 && w < 120) || (h > 0 && h < 120)) return;
+        if (/logo|icon|sprite|placeholder|blank|pixel|track/i.test(src)) return;
+        if (w >= 200 || h >= 200 || (!w && !h)) add(src);
+      });
+    }
+
+    return photos.slice(0, 15);
+  }
+
+  function clearUrlPreview() {
+    urlPreviewCard.innerHTML = '';
+    urlPreviewCard.style.display = 'none';
+    urlPreviewData = null;
+  }
+
+  function renderUrlPreview({ url, extracted, photos }) {
+    urlPreviewCard.innerHTML = '';
+    urlPreviewCard.style.display = '';
+
+    // ── Photo strip ──
+    if (photos.length) {
+      const strip = document.createElement('div');
+      strip.className = 'url-preview-photos';
+      photos.forEach(src => {
+        const img = document.createElement('img');
+        img.className = 'url-preview-photo';
+        img.src = src;
+        img.alt = '';
+        img.onerror = () => { img.style.display = 'none'; };
+        strip.appendChild(img);
+      });
+      urlPreviewCard.appendChild(strip);
+    } else {
+      const noPhotos = document.createElement('div');
+      noPhotos.className = 'url-no-photos';
+      noPhotos.textContent = 'No se encontraron fotos — puedes añadirlas manualmente';
+      urlPreviewCard.appendChild(noPhotos);
+    }
+
+    // ── Source URL ──
+    const srcRow = document.createElement('div');
+    srcRow.className = 'url-preview-source';
+    const srcLabel = document.createElement('span');
+    srcLabel.className = 'url-preview-source-label';
+    srcLabel.textContent = 'Fuente';
+    const srcLink = document.createElement('a');
+    srcLink.className = 'url-preview-link';
+    srcLink.href = url;
+    srcLink.target = '_blank';
+    srcLink.rel = 'noopener noreferrer';
+    srcLink.textContent = url;
+    srcRow.appendChild(srcLabel);
+    srcRow.appendChild(srcLink);
+    urlPreviewCard.appendChild(srcRow);
+
+    // ── Editable fields ──
+    const fieldDefs = [
+      { key: 'priceMxn',     label: 'Precio (MXN)', type: 'text',   placeholder: '15,000/mes' },
+      { key: 'sizeSqm',      label: 'Tamaño (m²)',  type: 'number', placeholder: '—' },
+      { key: 'neighborhood', label: 'Colonia',       type: 'text',   placeholder: 'Col. Roma…' },
+      { key: 'bedrooms',     label: '# Recámaras',  type: 'number', placeholder: '—' },
+      { key: 'bathrooms',    label: '# Baños',      type: 'number', placeholder: '—' },
+      { key: 'parking',      label: '# Estacion.',  type: 'number', placeholder: '—' },
+      { key: 'amenities',    label: 'Amenidades',    type: 'text',   placeholder: 'Gym, alberca…', wide: true },
+      { key: 'notes',        label: 'Notas',         type: 'text',   placeholder: '', wide: true },
+    ];
+
+    const fieldsGrid = document.createElement('div');
+    fieldsGrid.className = 'url-preview-fields';
+
+    const fieldInputs = {};
+    fieldDefs.forEach(({ key, label, type, placeholder, wide }) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'archive-field' + (wide ? ' wide' : '');
+      const lbl = document.createElement('div');
+      lbl.className = 'archive-field-label';
+      lbl.textContent = label;
+      const inp = document.createElement('input');
+      inp.type = type;
+      inp.className = 'archive-field-input';
+      inp.placeholder = placeholder;
+      const val = extracted[key];
+      inp.value = (val != null && val !== 'null') ? String(val) : '';
+      if (type === 'number') inp.min = '0';
+      fieldInputs[key] = inp;
+      wrap.appendChild(lbl);
+      wrap.appendChild(inp);
+      fieldsGrid.appendChild(wrap);
+    });
+    urlPreviewCard.appendChild(fieldsGrid);
+
+    // ── Actions ──
+    const actions = document.createElement('div');
+    actions.className = 'url-preview-actions';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'btn btn-analyze';
+    saveBtn.textContent = '💾 Guardar en archivo';
+    saveBtn.addEventListener('click', () => {
+      // Use the first visible photo as thumbnail; rest go to extraPhotos
+      const visiblePhotos = photos.filter(src => {
+        const el = urlPreviewCard.querySelector(`img[src="${CSS.escape(src)}"]`);
+        return !el || el.style.display !== 'none';
+      });
+      const entry = {
+        id: Date.now() + Math.random(),
+        date: new Date().toISOString(),
+        thumbnail:        visiblePhotos[0] || null,
+        address:          fieldInputs.neighborhood.value || null,
+        type:             null,
+        price:            null,
+        extras:           null,
+        allPhones:        [],
+        contactedNumber:  null,
+        contactedDisplay: null,
+        whatsappMessage:  '',
+        status:           'spotted',
+        notes:            fieldInputs.notes.value,
+        bedrooms:         fieldInputs.bedrooms.value,
+        bathrooms:        fieldInputs.bathrooms.value,
+        parking:          fieldInputs.parking.value,
+        priceMxn:         fieldInputs.priceMxn.value,
+        sizeSqm:          fieldInputs.sizeSqm.value,
+        neighborhood:     fieldInputs.neighborhood.value,
+        amenities:        fieldInputs.amenities.value,
+        extraPhotos:      visiblePhotos.slice(1),
+        sourceUrl:        url,
+      };
+      const archive = loadArchive();
+      archive.unshift(entry);
+      store.set('apt_hunter_archive', JSON.stringify(archive));
+      gistPush();
+      renderScorecard();
+      showToast('💾 Guardado en archivo ✓');
+      clearUrlPreview();
+      urlImportInput.value = '';
+    });
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn btn-ghost';
+    cancelBtn.style.padding = '11px 16px';
+    cancelBtn.textContent = 'Cancelar';
+    cancelBtn.addEventListener('click', clearUrlPreview);
+
+    actions.appendChild(saveBtn);
+    actions.appendChild(cancelBtn);
+    urlPreviewCard.appendChild(actions);
+
+    urlPreviewCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  async function analyzeUrl() {
+    const url = urlImportInput.value.trim();
+    if (!url) return;
+    try { new URL(url); } catch {
+      urlImportStatus.textContent = 'URL no válida';
+      urlImportStatus.className = 'url-import-status err';
+      return;
+    }
+
+    btnAnalyzeUrl.disabled = true;
+    btnAnalyzeUrl.textContent = '…';
+    urlImportStatus.className = 'url-import-status';
+    urlImportStatus.textContent = 'Obteniendo página…';
+    clearUrlPreview();
+
+    try {
+      const html = await fetchUrlViaWorker(url);
+      urlImportStatus.textContent = 'Extrayendo datos con Claude…';
+      const [extracted, photos] = await Promise.all([
+        extractListingFromText(htmlToText(html)),
+        Promise.resolve(extractPhotosFromHtml(html, url)),
+      ]);
+      urlPreviewData = { url, extracted, photos };
+      renderUrlPreview(urlPreviewData);
+      urlImportStatus.textContent = '';
+    } catch (e) {
+      urlImportStatus.textContent = `Error: ${e.message}`;
+      urlImportStatus.className = 'url-import-status err';
+    } finally {
+      btnAnalyzeUrl.disabled = false;
+      btnAnalyzeUrl.textContent = 'Analizar';
+    }
+  }
+
+  btnAnalyzeUrl.addEventListener('click', analyzeUrl);
+  urlImportInput.addEventListener('keydown', e => { if (e.key === 'Enter') analyzeUrl(); });
 
   // ── Bulk upload ─────────────────────────────────────────────────────────────
   let bulkFiles = [];     // persists across both picker and drag-drop paths
@@ -2377,7 +2749,7 @@ function escHtml(str) {
       : 'Archivo';
 
     if (count === 0) {
-      archiveList.innerHTML = '<div class="archive-empty">📭<br>No hay propiedades guardadas aún.<br>Contacta un número para guardar.</div>';
+      archiveList.innerHTML = '<div class="archive-empty">📭<br>No hay propiedades guardadas aún.<br>Escanea un letrero o pega un URL para empezar.</div>';
       return;
     }
     archiveList.innerHTML = '';
@@ -2613,6 +2985,17 @@ function escHtml(str) {
     delBtn.addEventListener('click', () => deleteArchiveEntry(entry.id));
 
     bottom.appendChild(textarea);
+    // "Ver anuncio" — only for URL-imported entries
+    if (entry.sourceUrl) {
+      const viewBtn = document.createElement('a');
+      viewBtn.className = 'btn-view-listing';
+      viewBtn.href = entry.sourceUrl;
+      viewBtn.target = '_blank';
+      viewBtn.rel = 'noopener noreferrer';
+      viewBtn.title = 'Ver anuncio original';
+      viewBtn.textContent = '↗ Ver';
+      bottom.appendChild(viewBtn);
+    }
     bottom.appendChild(shareBtn);
     bottom.appendChild(delBtn);
     card.appendChild(bottom);
