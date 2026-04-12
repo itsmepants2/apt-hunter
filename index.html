@@ -482,7 +482,7 @@
       display: flex;
       gap: 2px;
       overflow: hidden;
-      border-radius: var(--radius) var(--radius) 0 0;
+      border-radius: 12px;
       background: var(--surface2);
     }
 
@@ -581,20 +581,18 @@
       width: 100%;
       box-sizing: border-box;
       background: transparent;
-      border: 1px solid transparent;
-      border-radius: 6px;
-      padding: 12px 14px 8px;
-      font-size: 1.3rem;
+      border: none;
+      border-radius: 0;
+      padding: 14px 14px 6px;
+      font-size: 1.7rem;
       font-weight: 700;
       font-family: inherit;
       color: var(--text);
-      line-height: 1.25;
+      line-height: 1.2;
       outline: none;
-      transition: border-color 0.18s, background 0.18s;
     }
     .archive-headline::placeholder { color: var(--text-muted); font-weight: 400; }
-    .archive-headline:hover  { border-color: var(--border); }
-    .archive-headline:focus  { border-color: var(--accent); background: var(--surface2); }
+    .archive-headline:focus  { background: var(--surface2); }
 
     .archive-date { font-size: 0.72rem; color: var(--text-muted); }
 
