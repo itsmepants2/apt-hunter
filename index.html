@@ -483,7 +483,7 @@
       gap: 3px;
       overflow: hidden;
       border-radius: 12px;
-      background: #000;
+      background: var(--surface2);
       align-items: stretch;
     }
 
@@ -494,6 +494,7 @@
       position: relative;
       overflow: hidden;
       cursor: pointer;
+      border-radius: 12px 0 0 12px;
     }
     .archive-photo-main img {
       width: 100%;
@@ -529,6 +530,38 @@
       height: 100%;
       object-fit: cover;
       display: block;
+    }
+    /* Outer-corner rounding on the two right-column cells */
+    .archive-photo-side .archive-photo-cell:nth-child(2) { border-radius: 0 12px 0 0; }
+    .archive-photo-side .archive-photo-cell:nth-child(4) { border-radius: 0 0 12px 0; }
+
+    /* ── Photo delete button ─────────────────────────────────────────────────── */
+    .photo-delete-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.55);
+      color: #fff;
+      border: none;
+      font-size: 15px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.15s, background 0.15s;
+      z-index: 10;
+    }
+    .photo-delete-btn:hover { background: rgba(180, 30, 30, 0.85); }
+    .archive-photo-main:hover .photo-delete-btn,
+    .archive-photo-cell:hover  .photo-delete-btn { opacity: 1; }
+    .gallery-photo-wrap:hover  .photo-delete-btn { opacity: 1; }
+    @media (max-width: 767px) {
+      .photo-delete-btn { opacity: 0.85; }
     }
     .archive-photo-overlay {
       position: absolute;
@@ -598,7 +631,7 @@
       transition: background 0.15s;
     }
     input[type="text"].archive-headline::placeholder { color: var(--text-muted); font-weight: 400; }
-    input[type="text"].archive-headline:focus { background: var(--surface2); border: none; }
+    input[type="text"].archive-headline:focus { background: transparent; border: none; }
 
     .archive-date { font-size: 0.72rem; color: var(--text-muted); }
 
@@ -983,14 +1016,24 @@
       margin-bottom: 16px;
     }
 
+    .gallery-photo-wrap {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+    }
     .gallery-photo {
       width: 100%;
       aspect-ratio: 1;
       object-fit: cover;
-      border-radius: 8px;
+      display: block;
       cursor: pointer;
       transition: opacity 0.15s;
     }
+    .gallery-hero-wrap {
+      position: relative;
+      margin-bottom: 10px;
+    }
+    .gallery-hero-wrap .photo-delete-btn { opacity: 0.7; }
     .gallery-photo:hover { opacity: 0.85; }
 
     .gallery-date {
@@ -3057,6 +3100,34 @@ function escHtml(str) {
     filtered.forEach(entry => archiveList.appendChild(buildArchiveCard(entry)));
   }
 
+  function deleteArchivePhoto(entryId, photoSrc, onSuccess) {
+    if (!confirm('¿Eliminar esta foto?')) return;
+    const archive = loadArchive();
+    const e = archive.find(x => x.id === entryId);
+    if (!e) return;
+    if (e.thumbnail === photoSrc) {
+      // Promote first extra to thumbnail, or clear
+      e.thumbnail = (e.extraPhotos && e.extraPhotos.length > 0) ? e.extraPhotos.shift() : null;
+    } else {
+      e.extraPhotos = (e.extraPhotos || []).filter(s => s !== photoSrc);
+    }
+    store.set('apt_hunter_archive', JSON.stringify(archive));
+    gistPush();
+    if (onSuccess) onSuccess();
+  }
+
+  function makeDeleteBtn(entryId, photoSrc, onSuccess) {
+    const btn = document.createElement('button');
+    btn.className = 'photo-delete-btn';
+    btn.title = 'Eliminar foto';
+    btn.textContent = '×';
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      deleteArchivePhoto(entryId, photoSrc, onSuccess);
+    });
+    return btn;
+  }
+
   function buildArchiveCard(entry) {
     const card = document.createElement('div');
     card.className = 'archive-card';
@@ -3104,6 +3175,11 @@ function escHtml(str) {
     const photoGrid = document.createElement('div');
     photoGrid.className = 'archive-photo-grid';
 
+    const reRenderCard = () => {
+      const fresh = loadArchive().find(x => x.id === entry.id) || entry;
+      card.replaceWith(buildArchiveCard(fresh));
+    };
+
     // Left column: main photo
     const mainCol = document.createElement('div');
     mainCol.className = 'archive-photo-main';
@@ -3115,7 +3191,10 @@ function escHtml(str) {
         history.pushState({ property: entry.id }, '', `${location.pathname}?property=${entry.id}`);
         initGalleryMode(entry.id);
       });
+      // Hide cell if image fails to load (broken src / avatar placeholder)
+      mainImg.addEventListener('error', () => { mainCol.style.display = 'none'; });
       mainCol.appendChild(mainImg);
+      mainCol.appendChild(makeDeleteBtn(entry.id, allPhotos[0], reRenderCard));
     } else {
       const placeholder = document.createElement('div');
       placeholder.className = 'archive-photo-placeholder';
@@ -3135,6 +3214,8 @@ function escHtml(str) {
         const img = document.createElement('img');
         img.src = src;
         img.alt = `Foto ${i + 2}`;
+        // Hide cell if image fails to load
+        img.addEventListener('error', () => { cell.style.display = 'none'; });
         cell.appendChild(img);
         // "Ver todas" overlay on the last visible cell when more photos exist
         if (i === sidePhotos.length - 1 && allPhotos.length > 5) {
@@ -3152,6 +3233,7 @@ function escHtml(str) {
             initGalleryMode(entry.id);
           });
         }
+        cell.appendChild(makeDeleteBtn(entry.id, src, reRenderCard));
         sideCol.appendChild(cell);
       });
       photoGrid.appendChild(sideCol);
@@ -3517,23 +3599,44 @@ function escHtml(str) {
 
     // Photos: hero + thumbnail grid
     const allPhotos = [entry.thumbnail, ...(entry.extraPhotos || [])].filter(Boolean);
+    const reRenderGallery = () => {
+      const fresh = loadArchive().find(x => x.id === entry.id);
+      if (fresh && [fresh.thumbnail, ...(fresh.extraPhotos || [])].filter(Boolean).length) {
+        renderGallery(fresh);
+      } else {
+        history.replaceState(null, '', location.pathname);
+        galleryView.style.display = 'none';
+        document.getElementById('appHeader').style.display = '';
+        document.getElementById('topPanel').style.display = '';
+        document.getElementById('tabsBottom').style.display = '';
+        switchTab('archive');
+      }
+    };
     if (allPhotos.length) {
+      const heroWrap = document.createElement('div');
+      heroWrap.className = 'gallery-hero-wrap';
       const hero = document.createElement('img');
       hero.className = 'gallery-hero';
       hero.src = allPhotos[0];
       hero.alt = 'Foto principal';
-      galleryView.appendChild(hero);
+      heroWrap.appendChild(hero);
+      heroWrap.appendChild(makeDeleteBtn(entry.id, allPhotos[0], reRenderGallery));
+      galleryView.appendChild(heroWrap);
 
       if (allPhotos.length > 1) {
         const grid = document.createElement('div');
         grid.className = 'gallery-photos-grid';
         allPhotos.forEach((src, i) => {
+          const wrap = document.createElement('div');
+          wrap.className = 'gallery-photo-wrap';
           const img = document.createElement('img');
           img.className = 'gallery-photo';
           img.src = src;
           img.title = `Foto ${i + 1}`;
           img.addEventListener('click', () => { hero.src = src; window.scrollTo({top: 0, behavior: 'smooth'}); });
-          grid.appendChild(img);
+          wrap.appendChild(img);
+          wrap.appendChild(makeDeleteBtn(entry.id, src, reRenderGallery));
+          grid.appendChild(wrap);
         });
         galleryView.appendChild(grid);
       }
