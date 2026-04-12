@@ -575,6 +575,27 @@
       gap: 3px;
     }
 
+    /* ── Card headline ──────────────────────────────────────────────────────── */
+    .archive-headline {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 10px 12px 4px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      font-family: inherit;
+      color: var(--text);
+      line-height: 1.3;
+      outline: none;
+      transition: border-color 0.18s, background 0.18s;
+    }
+    .archive-headline::placeholder { color: var(--text-muted); font-weight: 400; }
+    .archive-headline:hover  { border-color: var(--border); }
+    .archive-headline:focus  { border-color: var(--accent); background: var(--surface2); }
+
     .archive-date { font-size: 0.72rem; color: var(--text-muted); }
 
     .archive-detail {
@@ -3119,6 +3140,35 @@ function escHtml(str) {
     }
 
     card.appendChild(photosSection);
+
+    // ── Headline ──
+    function generateHeadline(e) {
+      const beds = e.bedrooms ? `${e.bedrooms} recámara${e.bedrooms == 1 ? '' : 's'}` : null;
+      const col  = (e.neighborhood || '').trim() || null;
+      const tipo = (e.type || '').trim() || null;
+      if (beds && col)  return `${beds} en ${col}`;
+      if (beds && tipo) return `${beds} · ${tipo}`;
+      if (col)          return `Propiedad en ${col}`;
+      return 'Sin título';
+    }
+
+    const headlineInput = document.createElement('input');
+    headlineInput.type = 'text';
+    headlineInput.className = 'archive-headline';
+    headlineInput.placeholder = 'Sin título';
+    headlineInput.value = entry.headline != null ? entry.headline : generateHeadline(entry);
+    headlineInput.addEventListener('blur', () => {
+      const trimmed = headlineInput.value.trim();
+      if (!trimmed) {
+        // regenerate from template when cleared
+        const regen = generateHeadline(entry);
+        headlineInput.value = regen;
+        saveArchiveField(entry.id, 'headline', regen);
+      } else {
+        saveArchiveField(entry.id, 'headline', trimmed);
+      }
+    });
+    card.appendChild(headlineInput);
 
     // ── Info row (date, detail, phones) ──
     const top = document.createElement('div');
