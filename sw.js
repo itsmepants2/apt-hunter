@@ -1,4 +1,4 @@
-const CACHE = 'apt-hunter-v1';
+const CACHE = 'apt-hunter-v2';
 const ASSETS = ['/apt-hunter/', '/apt-hunter/index.html'];
 
 self.addEventListener('install', e => {
