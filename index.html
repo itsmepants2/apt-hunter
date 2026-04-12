@@ -501,6 +501,7 @@
       height: 100%;
       object-fit: cover;
       display: block;
+      border-radius: 12px 0 0 12px;
     }
     .archive-photo-placeholder {
       width: 100%;
@@ -534,6 +535,8 @@
     /* Outer-corner rounding on the two right-column cells */
     .archive-photo-side .archive-photo-cell:nth-child(2) { border-radius: 0 12px 0 0; }
     .archive-photo-side .archive-photo-cell:nth-child(4) { border-radius: 0 0 12px 0; }
+    .archive-photo-side .archive-photo-cell:nth-child(2) img { border-radius: 0 12px 0 0; }
+    .archive-photo-side .archive-photo-cell:nth-child(4) img { border-radius: 0 0 12px 0; }
 
     /* ── Photo delete button ─────────────────────────────────────────────────── */
     .photo-delete-btn {
