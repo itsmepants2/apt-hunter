@@ -1496,17 +1496,6 @@
     .bottom-tab .tab-icon { font-size: 1.35rem; line-height: 1; }
     .bottom-tab.active { color: var(--accent); }
 
-    /* Mercado placeholder */
-    .mercado-placeholder {
-      text-align: center;
-      padding: 80px 24px;
-      color: var(--text-muted);
-      line-height: 1.8;
-    }
-    .mercado-placeholder-icon { font-size: 3rem; margin-bottom: 12px; }
-    .mercado-placeholder-title { font-size: 1.1rem; font-weight: 600; color: var(--text); margin-bottom: 8px; }
-    .mercado-placeholder-body { font-size: 0.9rem; }
-
     /* ── Mobile layout (< 768px) ──────────────────────────────────────────────── */
     @media (max-width: 767px) {
       body { padding: 0; padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
@@ -1583,7 +1572,6 @@
       <nav class="tabs-top">
         <button class="view-tab active" id="tabScan" data-tab="scan">📷 Escanear</button>
         <button class="view-tab" id="tabArchive" data-tab="archive">🗂 Archivo</button>
-        <button class="view-tab" id="tabMercado" data-tab="mercado">🏪 Mercado</button>
       </nav>
       <button class="btn-settings" id="btnSettings" title="Ajustes">⚙️</button>
     </div>
@@ -1712,18 +1700,6 @@
       <div id="archiveList"></div>
     </div>
 
-    <!-- Mercado view (placeholder) -->
-    <div id="mercadoView" style="display:none;">
-      <div class="mercado-placeholder">
-        <div class="mercado-placeholder-icon">🏪</div>
-        <div class="mercado-placeholder-title">Mercado — próximamente</div>
-        <div class="mercado-placeholder-body">
-          Comparativa de precios por zona, tendencias del mercado<br>
-          y análisis de valor en tiempo real.
-        </div>
-      </div>
-    </div>
-
     <!-- Gallery view (opened via ?property=<id>) -->
     <div id="galleryView" style="display:none;"></div>
 
@@ -1755,9 +1731,6 @@
   </button>
   <button class="bottom-tab" data-tab="archive">
     <span class="tab-icon">🗂</span>Archivo
-  </button>
-  <button class="bottom-tab" data-tab="mercado">
-    <span class="tab-icon">🏪</span>Mercado
   </button>
 </nav>
 
@@ -1801,7 +1774,6 @@
   const settingsBackdrop  = document.getElementById('settingsBackdrop');
   const btnSettingsClose  = document.getElementById('btnSettingsClose');
   const topPanel        = document.getElementById('topPanel');
-  const mercadoView     = document.getElementById('mercadoView');
   const tabsBottom      = document.getElementById('tabsBottom');
   const scorecardToggle = document.getElementById('scorecardToggle');
   const scorecardBody   = document.getElementById('scorecardBody');
@@ -2629,7 +2601,6 @@ function escHtml(str) {
     // Show/hide tab content views
     scanView.style.display    = name === 'scan'    ? '' : 'none';
     archiveView.style.display = name === 'archive' ? '' : 'none';
-    mercadoView.style.display = name === 'mercado' ? '' : 'none';
 
     // Top panel: always visible on desktop (CSS handles it);
     // on mobile it shows only when scan tab is active
@@ -2762,7 +2733,13 @@ function escHtml(str) {
       const data = await ghGetGist(token, gistId);
       const content = data.files?.[GIST_FILE]?.content;
       if (!content) { syncStatus.textContent = 'Gist vacío.'; return; }
-      const merged = mergeArchives(loadArchive(), JSON.parse(content));
+      const parsed = JSON.parse(content);
+      // Back-compat: old Gists stored a bare array; new format is { listings, searchProfile }
+      const remoteListings = Array.isArray(parsed) ? parsed : (parsed.listings ?? []);
+      if (!Array.isArray(parsed) && parsed.searchProfile !== undefined) {
+        store.set('searchProfile', JSON.stringify(parsed.searchProfile));
+      }
+      const merged = mergeArchives(loadArchive(), remoteListings);
       store.set('apt_hunter_archive', JSON.stringify(merged));
       renderArchive();
       renderScorecard();
@@ -2786,13 +2763,18 @@ function escHtml(str) {
           const data = await ghGetGist(token, gistId);
           const content = data.files?.[GIST_FILE]?.content;
           if (content) {
-            const merged = mergeArchives(loadArchive(), JSON.parse(content));
+            const parsed = JSON.parse(content);
+            const remoteListings = Array.isArray(parsed) ? parsed : (parsed.listings ?? []);
+            const merged = mergeArchives(loadArchive(), remoteListings);
             store.set('apt_hunter_archive', JSON.stringify(merged));
           }
         } catch { /* ignore pull errors — push what we have */ }
       }
 
-      const archiveJson = JSON.stringify(loadArchive());
+      const searchProfile = (() => {
+        try { return JSON.parse(store.get('searchProfile') || 'null'); } catch { return null; }
+      })();
+      const archiveJson = JSON.stringify({ listings: loadArchive(), searchProfile });
 
       if (!gistId) {
         const created = await ghCreateGist(token, 'Apt Hunter archive', GIST_FILE, archiveJson);
