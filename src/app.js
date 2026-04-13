@@ -203,7 +203,6 @@ function renderPerfil() {
   const btnCsv            = document.getElementById('btnCsv');
   const ghTokenEl         = document.getElementById('ghToken');
   const saveGhTokenBtn    = document.getElementById('saveGhToken');
-  const btnSync           = document.getElementById('btnSync');
   const btnSettings       = document.getElementById('btnSettings');
   const settingsPanel     = document.getElementById('settingsPanel');
   const settingsBackdrop  = document.getElementById('settingsBackdrop');
@@ -423,12 +422,6 @@ function renderPerfil() {
     await discoverGist();
   });
   ghTokenEl.addEventListener('keydown', e => { if (e.key === 'Enter') saveGhTokenBtn.click(); });
-
-  btnSync.addEventListener('click', async () => {
-    btnSync.disabled = true;
-    await gistPull();
-    btnSync.disabled = false;
-  });
 
   // ── Check for gallery mode on load ──
   const _galleryParam = new URLSearchParams(location.search).get('property');
