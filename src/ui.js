@@ -976,26 +976,71 @@ export function buildArchiveCard(entry, scoreResult = null) {
     { key: 'amenities',    label: 'Amenidades',    type: 'text',   placeholder: 'Gym, alberca, roof…', wide: true },
   ];
 
-  // ── URL extractor row ──
-  const urlRow = document.createElement('div');
-  urlRow.className = 'listing-url-row';
+  if (!entry.sourceUrl) {
+    // ── URL extractor row ──
+    const urlRow = document.createElement('div');
+    urlRow.className = 'listing-url-row';
 
-  const urlInput = document.createElement('input');
-  urlInput.type = 'url';
-  urlInput.className = 'listing-url-input';
-  urlInput.placeholder = 'Pegar URL del anuncio…';
+    const urlInput = document.createElement('input');
+    urlInput.type = 'url';
+    urlInput.className = 'listing-url-input';
+    urlInput.placeholder = 'Pegar URL del anuncio…';
 
-  const extractBtn = document.createElement('button');
-  extractBtn.className = 'btn-extract';
-  extractBtn.textContent = 'Extraer';
+    const extractBtn = document.createElement('button');
+    extractBtn.className = 'btn-extract';
+    extractBtn.textContent = 'Extraer';
 
-  urlRow.appendChild(urlInput);
-  urlRow.appendChild(extractBtn);
-  card.appendChild(urlRow);
+    urlRow.appendChild(urlInput);
+    urlRow.appendChild(extractBtn);
+    card.appendChild(urlRow);
 
-  const urlStatus = document.createElement('div');
-  urlStatus.className = 'url-extract-status';
-  card.appendChild(urlStatus);
+    const urlStatus = document.createElement('div');
+    urlStatus.className = 'url-extract-status';
+    card.appendChild(urlStatus);
+
+    // Wire up URL extraction
+    async function runExtract() {
+      const { fetchUrlViaWorker, extractListingFromText } = await import('./services.js');
+      const url = urlInput.value.trim();
+      if (!url) return;
+
+      extractBtn.disabled = true;
+      extractBtn.textContent = '…';
+      urlStatus.className = 'url-extract-status';
+      urlStatus.textContent = 'Obteniendo página…';
+
+      try {
+        const pageText = htmlToText(await fetchUrlViaWorker(url));
+        urlStatus.textContent = 'Analizando con Claude…';
+        const extracted = await extractListingFromText(pageText);
+
+        const EXTRACT_KEYS = ['priceMxn', 'sizeSqm', 'bedrooms', 'bathrooms', 'parking', 'amenities', 'neighborhood'];
+        let filled = 0;
+        EXTRACT_KEYS.forEach(key => {
+          const val = extracted[key];
+          if (val != null && String(val).trim() && fieldInputs[key]) {
+            fieldInputs[key].value = String(val).trim();
+            saveArchiveField(entry.id, key, fieldInputs[key].value);
+            filled++;
+          }
+        });
+
+        urlStatus.className = 'url-extract-status ok';
+        urlStatus.textContent = filled
+          ? `✓ ${filled} campo${filled !== 1 ? 's' : ''} extraído${filled !== 1 ? 's' : ''}. Revisa y corrige si es necesario.`
+          : 'No se encontraron campos reconocibles en el anuncio.';
+      } catch (e) {
+        urlStatus.className = 'url-extract-status err';
+        urlStatus.textContent = `Error: ${e.message}`;
+      } finally {
+        extractBtn.disabled = false;
+        extractBtn.textContent = 'Extraer';
+      }
+    }
+
+    extractBtn.addEventListener('click', runExtract);
+    urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') runExtract(); });
+  }
 
   // ── Property fields ──
   const fieldsRow = document.createElement('div');
@@ -1023,49 +1068,6 @@ export function buildArchiveCard(entry, scoreResult = null) {
     wrap.appendChild(inp);
     fieldsRow.appendChild(wrap);
   });
-
-  // Wire up URL extraction
-  async function runExtract() {
-    const { fetchUrlViaWorker, extractListingFromText } = await import('./services.js');
-    const url = urlInput.value.trim();
-    if (!url) return;
-
-    extractBtn.disabled = true;
-    extractBtn.textContent = '…';
-    urlStatus.className = 'url-extract-status';
-    urlStatus.textContent = 'Obteniendo página…';
-
-    try {
-      const pageText = htmlToText(await fetchUrlViaWorker(url));
-      urlStatus.textContent = 'Analizando con Claude…';
-      const extracted = await extractListingFromText(pageText);
-
-      const EXTRACT_KEYS = ['priceMxn', 'sizeSqm', 'bedrooms', 'bathrooms', 'parking', 'amenities', 'neighborhood'];
-      let filled = 0;
-      EXTRACT_KEYS.forEach(key => {
-        const val = extracted[key];
-        if (val != null && String(val).trim() && fieldInputs[key]) {
-          fieldInputs[key].value = String(val).trim();
-          saveArchiveField(entry.id, key, fieldInputs[key].value);
-          filled++;
-        }
-      });
-
-      urlStatus.className = 'url-extract-status ok';
-      urlStatus.textContent = filled
-        ? `✓ ${filled} campo${filled !== 1 ? 's' : ''} extraído${filled !== 1 ? 's' : ''}. Revisa y corrige si es necesario.`
-        : 'No se encontraron campos reconocibles en el anuncio.';
-    } catch (e) {
-      urlStatus.className = 'url-extract-status err';
-      urlStatus.textContent = `Error: ${e.message}`;
-    } finally {
-      extractBtn.disabled = false;
-      extractBtn.textContent = 'Extraer';
-    }
-  }
-
-  extractBtn.addEventListener('click', runExtract);
-  urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') runExtract(); });
 
   card.appendChild(fieldsRow);
 
