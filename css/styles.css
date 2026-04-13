@@ -568,6 +568,82 @@
     .score-badge.score-green { background: #4caf50; }
     .score-badge.score-amber { background: #ff9800; }
     .score-badge.score-red   { background: #f44336; }
+
+    /* ── Match breakdown section ─────────────────────────────────────────── */
+    .score-breakdown {
+      padding: 10px 12px 4px;
+      border-top: 1px solid var(--border);
+    }
+    .score-breakdown-header {
+      font-size: 0.78rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: 0.01em;
+    }
+    .score-breakdown-header.score-green { color: #4caf50; }
+    .score-breakdown-header.score-amber { color: #ff9800; }
+    .score-breakdown-header.score-red   { color: #f44336; }
+
+    .score-breakdown-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      padding-bottom: 6px;
+    }
+
+    .breakdown-row {
+      display: grid;
+      grid-template-columns: 130px 1fr 18px auto;
+      align-items: center;
+      gap: 7px;
+    }
+    @media (max-width: 479px) {
+      .breakdown-row { grid-template-columns: 100px 1fr 16px auto; gap: 5px; }
+    }
+
+    .breakdown-name {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .breakdown-must-miss .breakdown-name {
+      color: #f44336;
+      font-weight: 600;
+    }
+
+    .breakdown-bar-wrap {
+      height: 4px;
+      background: #e0e0e0;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .breakdown-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+    }
+    .breakdown-bar-fill.score-green { background: #4caf50; }
+    .breakdown-bar-fill.score-amber { background: #ff9800; }
+    .breakdown-bar-fill.score-red   { background: #f44336; }
+
+    .breakdown-result {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-align: center;
+    }
+    .breakdown-result.score-green { color: #4caf50; }
+    .breakdown-result.score-red   { color: #f44336; }
+
+    .breakdown-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .breakdown-must-miss .breakdown-result,
+    .breakdown-must-miss .breakdown-label { color: #f44336; }
     .archive-photo-main:hover .photo-delete-btn,
     .archive-photo-cell:hover  .photo-delete-btn { opacity: 1; }
     .gallery-photo-wrap:hover  .photo-delete-btn { opacity: 1; }

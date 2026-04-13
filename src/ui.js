@@ -18,6 +18,23 @@ import { gistPush } from './sync.js';
 
 import { scoreEntry } from './scoring.js';
 
+// ── Scoring constants ──────────────────────────────────────────────────────
+const CRITERION_LABELS = {
+  recamaras:       'Recámaras',
+  banos:           'Baños',
+  estacionamiento: 'Estacionamiento',
+  precio:          'Precio',
+  tamano:          'Tamaño',
+  colonias:        'Colonia',
+  elevador:        'Elevador',
+  terraza:         'Terraza / Balcón',
+  seguridad24h:    'Seguridad 24h',
+  gimnasio:        'Gimnasio',
+  alberca:         'Alberca',
+  mascotas:        'Mascotas',
+  amueblado:       'Amueblado',
+};
+
 // ── Scoring adapters (archive fields → scoring engine fields) ──────────────
 function loadScoringProfile() {
   try {
@@ -45,6 +62,62 @@ function toScoringEntry(e) {
     colonia:         e.neighborhood,
     amenidades:      e.amenities,
   };
+}
+
+function buildBreakdownSection({ total, breakdown }) {
+  const colorClass = total >= 75 ? 'score-green' : total >= 50 ? 'score-amber' : 'score-red';
+
+  const section = document.createElement('div');
+  section.className = 'score-breakdown';
+
+  const header = document.createElement('div');
+  header.className = `score-breakdown-header ${colorClass}`;
+  header.textContent = `🎯 Match  ${total}%`;
+  section.appendChild(header);
+
+  const grid = document.createElement('div');
+  grid.className = 'score-breakdown-grid';
+
+  Object.entries(breakdown).forEach(([key, { score, max, label }]) => {
+    if (max === 0) return; // skip inactive criteria
+
+    const isMustMiss = max === 3 && score !== 3; // must-have penalty
+    const fillPct    = Math.max(0, Math.min(100, (score / max) * 100));
+    const fillColor  = score >= max ? 'score-green' : score > 0 ? 'score-amber' : 'score-red';
+    const icon       = score >= max ? '✓' : '✗';
+    const iconColor  = score >= max ? 'score-green' : 'score-red';
+
+    const row = document.createElement('div');
+    row.className = 'breakdown-row' + (isMustMiss ? ' breakdown-must-miss' : '');
+
+    const nameEl = document.createElement('span');
+    nameEl.className = 'breakdown-name';
+    nameEl.textContent = CRITERION_LABELS[key] || key;
+
+    const barWrap = document.createElement('div');
+    barWrap.className = 'breakdown-bar-wrap';
+    const barFill = document.createElement('div');
+    barFill.className = `breakdown-bar-fill ${fillColor}`;
+    barFill.style.width = `${fillPct}%`;
+    barWrap.appendChild(barFill);
+
+    const resultEl = document.createElement('span');
+    resultEl.className = `breakdown-result ${iconColor}`;
+    resultEl.textContent = icon;
+
+    const labelEl = document.createElement('span');
+    labelEl.className = 'breakdown-label';
+    labelEl.textContent = label;
+
+    row.appendChild(nameEl);
+    row.appendChild(barWrap);
+    row.appendChild(resultEl);
+    row.appendChild(labelEl);
+    grid.appendChild(row);
+  });
+
+  section.appendChild(grid);
+  return section;
 }
 
 // ── Thumbnail ──────────────────────────────────────────────────────────────
@@ -722,6 +795,9 @@ export function buildArchiveCard(entry, scoreResult = null) {
   const card = document.createElement('div');
   card.className = 'archive-card';
 
+  // Resolve score — use passed-in result or compute fresh (e.g. add-photo rerender)
+  const sr = scoreResult ?? scoreEntry(toScoringEntry(entry), loadScoringProfile());
+
   const dateStr = new Date(entry.date).toLocaleString('es-MX', {
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
@@ -831,8 +907,8 @@ export function buildArchiveCard(entry, scoreResult = null) {
   photosSection.appendChild(photoGrid);
 
   // ── Score badge ──
-  if (scoreResult !== null && scoreResult.total !== null) {
-    const { total } = scoreResult;
+  if (sr !== null && sr.total !== null) {
+    const { total } = sr;
     const badge = document.createElement('div');
     badge.className = 'score-badge'
       + (total >= 75 ? ' score-green' : total >= 50 ? ' score-amber' : ' score-red');
@@ -1036,6 +1112,11 @@ export function buildArchiveCard(entry, scoreResult = null) {
   if (fieldInputs.priceMxn) fieldInputs.priceMxn.addEventListener('blur', updateComputedRow);
   if (fieldInputs.sizeSqm)  fieldInputs.sizeSqm.addEventListener('blur', updateComputedRow);
   card.appendChild(computedRow);
+
+  // ── Match breakdown ──
+  if (sr !== null && sr.total !== null) {
+    card.appendChild(buildBreakdownSection(sr));
+  }
 
   // ── Bottom row: notes + delete ──
   const bottom = document.createElement('div');
