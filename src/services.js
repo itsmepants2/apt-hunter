@@ -19,7 +19,7 @@ const GITHUB_API  = 'https://api.github.com';
  * The Worker injects the API key — no key is needed in the browser.
  * Returns the full parsed response object. Throws on non-2xx.
  */
-async function callAnthropicMessages(payload) {
+export async function callAnthropicMessages(payload) {
   const res = await fetch(`${WORKER_BASE}/anthropic`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -37,7 +37,7 @@ async function callAnthropicMessages(payload) {
  * Returns a parsed object with keys: priceMxn, sizeSqm, bedrooms, bathrooms,
  * parking, amenities, neighborhood. Missing fields are null.
  */
-async function extractListingFromText(pageText) {
+export async function extractListingFromText(pageText) {
   const prompt =
     'Extract real estate listing details from the webpage text below. '
     + 'Return ONLY a JSON object with exactly these keys (null for any not found):\n'
@@ -64,7 +64,7 @@ async function extractListingFromText(pageText) {
  * Fetch a remote URL's raw content through the Worker edge.
  * Bypasses browser CORS restrictions. Returns the response body as text.
  */
-async function fetchUrlViaWorker(url) {
+export async function fetchUrlViaWorker(url) {
   const res = await fetch(`${WORKER_BASE}/fetch?url=${encodeURIComponent(url)}`);
   if (!res.ok) throw new Error(`No se pudo obtener la página (${res.status})`);
   return res.text();
@@ -72,7 +72,7 @@ async function fetchUrlViaWorker(url) {
 
 // ── GitHub Gist (direct) ───────────────────────────────────────────────────
 
-function _ghHeaders(token) {
+export function _ghHeaders(token) {
   return {
     Authorization: `Bearer ${token}`,
     Accept: 'application/vnd.github+json',
@@ -84,7 +84,7 @@ function _ghHeaders(token) {
  * List gists for the authenticated user (100 per page).
  * Returns the parsed array of gist summary objects.
  */
-async function ghListGists(token, page = 1) {
+export async function ghListGists(token, page = 1) {
   const res = await fetch(`${GITHUB_API}/gists?per_page=100&page=${page}`, {
     headers: _ghHeaders(token),
   });
@@ -96,7 +96,7 @@ async function ghListGists(token, page = 1) {
  * Fetch a single gist by ID.
  * Returns the full parsed gist object (including file contents).
  */
-async function ghGetGist(token, gistId) {
+export async function ghGetGist(token, gistId) {
   const res = await fetch(`${GITHUB_API}/gists/${gistId}`, {
     headers: _ghHeaders(token),
   });
@@ -108,7 +108,7 @@ async function ghGetGist(token, gistId) {
  * Create a new secret gist with a single file.
  * Returns the created gist object (use .id for future reads/writes).
  */
-async function ghCreateGist(token, description, fileName, content) {
+export async function ghCreateGist(token, description, fileName, content) {
   const res = await fetch(`${GITHUB_API}/gists`, {
     method: 'POST',
     headers: _ghHeaders(token),
@@ -126,7 +126,7 @@ async function ghCreateGist(token, description, fileName, content) {
  * Update a single file inside an existing gist.
  * Returns the updated gist object.
  */
-async function ghUpdateGist(token, gistId, fileName, content) {
+export async function ghUpdateGist(token, gistId, fileName, content) {
   const res = await fetch(`${GITHUB_API}/gists/${gistId}`, {
     method: 'PATCH',
     headers: _ghHeaders(token),

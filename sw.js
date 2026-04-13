@@ -1,5 +1,12 @@
-const CACHE = 'apt-hunter-v2';
-const ASSETS = ['/apt-hunter/', '/apt-hunter/index.html'];
+const CACHE = 'apt-hunter-v3';
+const ASSETS = [
+  '/apt-hunter/',
+  '/apt-hunter/index.html',
+  '/apt-hunter/css/styles.css',
+  '/apt-hunter/src/app.js',
+  '/apt-hunter/src/ui.js',
+  '/apt-hunter/src/services.js',
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
