@@ -700,8 +700,18 @@
       gap: 3px;
     }
 
+    /* ── Card hero wrapper ───────────────────────────────────────────────────── */
+    .card-hero-wrapper {
+      position: relative;
+      overflow: hidden;
+    }
+
     /* ── Card headline — specificity must beat input[type="text"] (0,1,1) ───── */
     input[type="text"].archive-headline {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      z-index: 2;
       display: block;
       width: 100%;
       box-sizing: border-box;
@@ -712,12 +722,13 @@
       font-size: 1.8rem;
       font-weight: 800;
       font-family: inherit;
-      color: var(--text);
+      color: #ffffff;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.6);
       line-height: 1.2;
       outline: none;
       transition: background 0.15s;
     }
-    input[type="text"].archive-headline::placeholder { color: var(--text-muted); font-weight: 400; }
+    input[type="text"].archive-headline::placeholder { color: rgba(255,255,255,0.6); font-weight: 400; }
     input[type="text"].archive-headline:focus { background: transparent; border: none; }
 
     .archive-date { font-size: 0.72rem; color: var(--text-muted); }

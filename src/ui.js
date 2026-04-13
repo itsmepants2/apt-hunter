@@ -832,8 +832,6 @@ export function buildArchiveCard(entry, scoreResult = null) {
       saveArchiveField(entry.id, 'headline', trimmed);
     }
   });
-  card.appendChild(headlineInput);
-
   // ── Photos section: real estate two-column grid ──
   const photosSection = document.createElement('div');
   const allPhotos = [entry.thumbnail, ...(entry.extraPhotos || [])].filter(Boolean);
@@ -929,7 +927,11 @@ export function buildArchiveCard(entry, scoreResult = null) {
     photosSection.appendChild(verBtn);
   }
 
-  card.appendChild(photosSection);
+  const heroWrapper = document.createElement('div');
+  heroWrapper.className = 'card-hero-wrapper';
+  heroWrapper.appendChild(photosSection);
+  heroWrapper.appendChild(headlineInput);
+  card.appendChild(heroWrapper);
 
   // ── Info row (date, detail, phones) ──
   const top = document.createElement('div');
