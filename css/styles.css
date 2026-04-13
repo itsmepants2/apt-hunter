@@ -551,6 +551,23 @@
       z-index: 10;
     }
     .photo-delete-btn:hover { background: rgba(180, 30, 30, 0.85); }
+
+    .score-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 2;
+      padding: 3px 9px;
+      border-radius: 12px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #fff;
+      pointer-events: none;
+      letter-spacing: 0.02em;
+    }
+    .score-badge.score-green { background: #4caf50; }
+    .score-badge.score-amber { background: #ff9800; }
+    .score-badge.score-red   { background: #f44336; }
     .archive-photo-main:hover .photo-delete-btn,
     .archive-photo-cell:hover  .photo-delete-btn { opacity: 1; }
     .gallery-photo-wrap:hover  .photo-delete-btn { opacity: 1; }

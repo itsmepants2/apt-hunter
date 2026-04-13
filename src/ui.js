@@ -16,6 +16,37 @@ import { saveToArchive, switchTab } from './app.js';
 
 import { gistPush } from './sync.js';
 
+import { scoreEntry } from './scoring.js';
+
+// ── Scoring adapters (archive fields → scoring engine fields) ──────────────
+function loadScoringProfile() {
+  try {
+    const raw = JSON.parse(localStorage.getItem('searchProfile') || 'null');
+    if (!raw) return null;
+    return {
+      recamaras:        raw.recamarasMin,
+      banos:            raw.banosMin,
+      estacionamiento:  raw.estacionamientoMin,
+      precio:           raw.precioMax,
+      tamano:           raw.tamanoMin,
+      coloniasPreferidas: raw.coloniasPreferidas || [],
+      ...(raw.amenidades || {}),
+    };
+  } catch { return null; }
+}
+
+function toScoringEntry(e) {
+  return {
+    recamaras:       e.bedrooms,
+    banos:           e.bathrooms,
+    estacionamiento: e.parking,
+    precio:          parsePriceMxn(e.priceMxn),
+    tamano:          e.sizeSqm,
+    colonia:         e.neighborhood,
+    amenidades:      e.amenities,
+  };
+}
+
 // ── Thumbnail ──────────────────────────────────────────────────────────────
 export function generateThumbnail(dataUrl) {
   return new Promise(resolve => {
@@ -487,6 +518,10 @@ export function renderArchive() {
   const archiveTitle = document.getElementById('archiveTitle');
   const archive = loadArchive();
   const count = archive.length;
+
+  // Load profile once for the whole render pass
+  const scoringProfile = loadScoringProfile();
+  const hasProfile = scoringProfile !== null;
   archiveTitle.textContent = count
     ? `Archivo · ${count} propiedad${count !== 1 ? 'es' : ''}`
     : 'Archivo';
@@ -500,16 +535,20 @@ export function renderArchive() {
     const filterRow = document.createElement('div');
     filterRow.className = 'filter-row';
 
+    // Default sort to mejor-match when a profile exists and user hasn't chosen a sort yet
+    if (hasProfile && archiveFilter.sort === '') archiveFilter.sort = 'mejor-match';
+
     // Sort
     const sortSel = document.createElement('select');
     sortSel.className = 'filter-select';
     [
-      { value: '',           label: 'Orden: más reciente' },
-      { value: 'price-asc',  label: 'Precio (menor a mayor)' },
-      { value: 'price-desc', label: 'Precio (mayor a menor)' },
-      { value: 'ppm2-asc',   label: 'Precio/m² (menor a mayor)' },
-      { value: 'ppm2-desc',  label: 'Precio/m² (mayor a menor)' },
-      { value: 'rooms',      label: 'Recámaras' },
+      { value: 'mejor-match', label: 'Mejor match' },
+      { value: '',            label: 'Orden: más reciente' },
+      { value: 'price-asc',   label: 'Precio (menor a mayor)' },
+      { value: 'price-desc',  label: 'Precio (mayor a menor)' },
+      { value: 'ppm2-asc',    label: 'Precio/m² (menor a mayor)' },
+      { value: 'ppm2-desc',   label: 'Precio/m² (mayor a menor)' },
+      { value: 'rooms',       label: 'Recámaras' },
     ].forEach(({ value, label }) => {
       const opt = document.createElement('option');
       opt.value = value; opt.textContent = label;
@@ -622,6 +661,23 @@ export function renderArchive() {
     });
   }
 
+  // Pre-compute scores for all filtered entries (one profile load, above)
+  const scoreMap = new Map();
+  filtered.forEach(e => {
+    scoreMap.set(e.id, scoreEntry(toScoringEntry(e), scoringProfile));
+  });
+
+  if (archiveFilter.sort === 'mejor-match') {
+    filtered.sort((a, b) => {
+      const sa = scoreMap.get(a.id)?.total;
+      const sb = scoreMap.get(b.id)?.total;
+      if (sa === null && sb === null) return 0;
+      if (sa === null) return 1;
+      if (sb === null) return -1;
+      return sb - sa;
+    });
+  }
+
   if (count === 0) {
     archiveList.innerHTML = '<div class="archive-empty">📭<br>No hay propiedades guardadas aún.<br>Escanea un letrero o pega un URL para empezar.</div>';
     return;
@@ -631,7 +687,7 @@ export function renderArchive() {
     archiveList.innerHTML = '<div class="archive-empty">🔍<br>Ninguna propiedad coincide con los filtros.</div>';
     return;
   }
-  filtered.forEach(entry => archiveList.appendChild(buildArchiveCard(entry)));
+  filtered.forEach(entry => archiveList.appendChild(buildArchiveCard(entry, scoreMap.get(entry.id))));
 }
 
 export function deleteArchivePhoto(entryId, photoSrc, onSuccess) {
@@ -662,7 +718,7 @@ export function makeDeleteBtn(entryId, photoSrc, onSuccess) {
   return btn;
 }
 
-export function buildArchiveCard(entry) {
+export function buildArchiveCard(entry, scoreResult = null) {
   const card = document.createElement('div');
   card.className = 'archive-card';
 
@@ -711,7 +767,7 @@ export function buildArchiveCard(entry) {
 
   const reRenderCard = () => {
     const fresh = loadArchive().find(x => x.id === entry.id) || entry;
-    card.replaceWith(buildArchiveCard(fresh));
+    card.replaceWith(buildArchiveCard(fresh, scoreResult));
   };
 
   // Left column: main photo
@@ -773,6 +829,17 @@ export function buildArchiveCard(entry) {
     photoGrid.appendChild(sideCol);
   }
   photosSection.appendChild(photoGrid);
+
+  // ── Score badge ──
+  if (scoreResult !== null && scoreResult.total !== null) {
+    const { total } = scoreResult;
+    const badge = document.createElement('div');
+    badge.className = 'score-badge'
+      + (total >= 75 ? ' score-green' : total >= 50 ? ' score-amber' : ' score-red');
+    badge.textContent = `${total}%`;
+    photosSection.style.position = 'relative';
+    photosSection.appendChild(badge);
+  }
 
   // "Ver todas" button — mobile only (hidden on desktop via CSS)
   if (allPhotos.length > 1) {

@@ -378,6 +378,7 @@ function renderPerfil() {
     const profile = { recamarasMin, banosMin, estacionamientoMin, precioMax, tamanoMin, coloniasPreferidas, amenidades };
     store.set('searchProfile', JSON.stringify(profile));
     gistPush();
+    renderArchive();
     showToast('Perfil guardado ✓');
   });
 
