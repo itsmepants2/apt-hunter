@@ -940,7 +940,7 @@ export function buildArchiveCard(entry, scoreResult = null) {
     `<div class="archive-date">${escHtml(dateStr)}</div>`
     + (detailParts.length ? `<div class="archive-detail">${escHtml(detailParts.join(' · '))}</div>` : '')
     + (allPhonesStr ? `<div class="archive-phones">📞 ${escHtml(allPhonesStr)}</div>` : '')
-    + `<div class="archive-contacted">Contactado: <span>+${escHtml(String(entry.contactedNumber))}</span></div>`;
+    + (entry.contactedNumber ? `<div class="archive-contacted">Contactado: <span>+${escHtml(String(entry.contactedNumber))}</span></div>` : '');
   top.appendChild(info);
   card.appendChild(top);
 
