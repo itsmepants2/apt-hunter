@@ -3,18 +3,18 @@ import {
   store,
   STATUSES,
   loadArchive,
-  saveToArchive,
   saveArchiveField,
   saveArchivePhotoAdd,
   deleteArchiveEntry,
   parsePriceMxn,
-  switchTab,
-  initGalleryMode,
-  gistPush,
   readFileAsDataUrl,
   mxnToUsdRate,
   archiveFilter,
-} from './app.js';
+} from './archive.js';
+
+import { saveToArchive, switchTab } from './app.js';
+
+import { gistPush } from './sync.js';
 
 // ── Thumbnail ──────────────────────────────────────────────────────────────
 export function generateThumbnail(dataUrl) {
