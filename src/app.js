@@ -285,8 +285,10 @@ export function switchTab(name) {
   });
 
   // Show/hide tab content views
+  const perfilView  = document.getElementById('perfilView');
   scanView.style.display    = name === 'scan'    ? '' : 'none';
   archiveView.style.display = name === 'archive' ? '' : 'none';
+  perfilView.style.display  = name === 'perfil'  ? '' : 'none';
 
   // Top panel: always visible on desktop (CSS handles it);
   // on mobile it shows only when scan tab is active
@@ -296,8 +298,99 @@ export function switchTab(name) {
     renderArchive();
     gistPull();
   }
+  if (name === 'perfil') renderPerfil();
 
   renderScorecard();
+}
+
+// ── Search Profile ─────────────────────────────────────────────────────────
+
+const AMENIDADES_LABELS = {
+  elevador:     'Elevador',
+  terraza:      'Terraza',
+  seguridad24h: 'Seguridad 24h',
+  gimnasio:     'Gimnasio',
+  alberca:      'Alberca',
+  mascotas:     'Mascotas',
+  amueblado:    'Amueblado',
+};
+
+const PERFIL_DEFAULT = {
+  recamarasMin: 2,
+  banosMin: 1,
+  estacionamientoMin: 0,
+  precioMax: null,
+  tamanoMin: null,
+  coloniasPreferidas: [],
+  amenidades: { elevador: null, terraza: null, seguridad24h: null, gimnasio: null, alberca: null, mascotas: null, amueblado: null },
+};
+
+function renderColoniasChips(list) {
+  const container = document.getElementById('coloniasChips');
+  container.innerHTML = '';
+  list.forEach(name => {
+    const chip = document.createElement('span');
+    chip.className = 'colonia-chip';
+    chip.dataset.name = name;
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = name;
+    chip.appendChild(nameSpan);
+    const x = document.createElement('button');
+    x.className = 'chip-remove';
+    x.textContent = '×';
+    x.setAttribute('aria-label', `Eliminar ${name}`);
+    x.addEventListener('click', () => chip.remove());
+    chip.appendChild(x);
+    container.appendChild(chip);
+  });
+}
+
+function renderPerfil() {
+  const raw = store.get('searchProfile');
+  const saved = raw ? JSON.parse(raw) : {};
+  const p = { ...PERFIL_DEFAULT, ...saved };
+  p.amenidades = { ...PERFIL_DEFAULT.amenidades, ...(p.amenidades || {}) };
+
+  document.getElementById('perfilValRecamaras').textContent = p.recamarasMin ?? 2;
+  document.getElementById('perfilValBanos').textContent     = p.banosMin ?? 1;
+  document.getElementById('perfilValEst').textContent       = p.estacionamientoMin ?? 0;
+  document.getElementById('perfilPrecioMax').value          = p.precioMax != null ? p.precioMax : '';
+  document.getElementById('perfilTamanoMin').value          = p.tamanoMin != null ? p.tamanoMin : '';
+
+  renderColoniasChips(p.coloniasPreferidas || []);
+
+  const amenContainer = document.getElementById('amenidadesRows');
+  amenContainer.innerHTML = '';
+  Object.entries(AMENIDADES_LABELS).forEach(([key, label]) => {
+    const val = p.amenidades[key]; // null | 'want' | 'must'
+    const row = document.createElement('div');
+    row.className = 'amenidad-row';
+    row.dataset.key = key;
+
+    const lbl = document.createElement('span');
+    lbl.className = 'amenidad-label';
+    lbl.textContent = label;
+
+    const toggle = document.createElement('div');
+    toggle.className = 'tri-toggle';
+
+    [['null', '—'], ['want', 'Quiero'], ['must', 'Imprescindible']].forEach(([v, text]) => {
+      const btn = document.createElement('button');
+      const isActive = (val === null && v === 'null') || (val === v);
+      btn.className = 'tri-btn' + (isActive ? ' active' : '');
+      btn.dataset.val = v;
+      btn.textContent = text;
+      btn.addEventListener('click', () => {
+        toggle.querySelectorAll('.tri-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+      toggle.appendChild(btn);
+    });
+
+    row.appendChild(lbl);
+    row.appendChild(toggle);
+    amenContainer.appendChild(row);
+  });
 }
 
 // ── Gallery mode ───────────────────────────────────────────────────────────
@@ -803,6 +896,70 @@ function escHtml(str) {
   // ── Tab switching ──
   document.querySelectorAll('[data-tab]').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  // ── Perfil ──
+  const coloniasInput  = document.getElementById('coloniasInput');
+  const btnAddColonia  = document.getElementById('btnAddColonia');
+  const btnSavePerfil  = document.getElementById('btnSavePerfil');
+
+  function addColoniaChip(name) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const existing = [...document.querySelectorAll('.colonia-chip')].map(c => c.dataset.name);
+    if (existing.includes(trimmed)) { coloniasInput.value = ''; return; }
+    const container = document.getElementById('coloniasChips');
+    const chip = document.createElement('span');
+    chip.className = 'colonia-chip';
+    chip.dataset.name = trimmed;
+    const nameSpan = document.createElement('span');
+    nameSpan.textContent = trimmed;
+    chip.appendChild(nameSpan);
+    const x = document.createElement('button');
+    x.className = 'chip-remove';
+    x.textContent = '×';
+    x.setAttribute('aria-label', `Eliminar ${trimmed}`);
+    x.addEventListener('click', () => chip.remove());
+    chip.appendChild(x);
+    container.appendChild(chip);
+    coloniasInput.value = '';
+  }
+
+  coloniasInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addColoniaChip(coloniasInput.value); } });
+  btnAddColonia.addEventListener('click', () => addColoniaChip(coloniasInput.value));
+
+  document.querySelectorAll('.stepper').forEach(stepper => {
+    stepper.addEventListener('click', e => {
+      const btn = e.target.closest('.stepper-btn');
+      if (!btn) return;
+      const valEl = stepper.querySelector('.stepper-val');
+      let val = parseInt(valEl.textContent, 10) || 0;
+      if (btn.dataset.action === 'inc') val++;
+      else if (btn.dataset.action === 'dec') val = Math.max(0, val - 1);
+      valEl.textContent = val;
+    });
+  });
+
+  btnSavePerfil.addEventListener('click', () => {
+    const recamarasMin       = parseInt(document.getElementById('perfilValRecamaras').textContent, 10) || 0;
+    const banosMin           = parseInt(document.getElementById('perfilValBanos').textContent,     10) || 0;
+    const estacionamientoMin = parseInt(document.getElementById('perfilValEst').textContent,       10) || 0;
+    const precioVal = document.getElementById('perfilPrecioMax').value;
+    const tamanoVal = document.getElementById('perfilTamanoMin').value;
+    const precioMax = precioVal !== '' ? Number(precioVal) : null;
+    const tamanoMin = tamanoVal !== '' ? Number(tamanoVal) : null;
+    const coloniasPreferidas = [...document.querySelectorAll('.colonia-chip')]
+      .map(chip => chip.dataset.name).filter(Boolean);
+    const amenidades = {};
+    document.querySelectorAll('.amenidad-row').forEach(row => {
+      const key = row.dataset.key;
+      const v   = row.querySelector('.tri-btn.active')?.dataset.val;
+      amenidades[key] = (v === 'null' || !v) ? null : v;
+    });
+    const profile = { recamarasMin, banosMin, estacionamientoMin, precioMax, tamanoMin, coloniasPreferidas, amenidades };
+    store.set('searchProfile', JSON.stringify(profile));
+    gistPush();
+    showToast('Perfil guardado ✓');
   });
 
   // ── Scorecard toggle (mobile) ──

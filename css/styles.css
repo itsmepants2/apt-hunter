@@ -1547,3 +1547,151 @@
       /* Bottom tab bar: hidden on desktop */
       .tabs-bottom { display: none; }
     }
+
+    /* ── Perfil tab ────────────────────────────────────────────────────────────── */
+    .perfil-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .perfil-row:last-child { border-bottom: none; }
+
+    .perfil-label {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* Steppers */
+    .stepper {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .stepper-btn {
+      background: none;
+      border: none;
+      padding: 7px 14px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      color: var(--text);
+      line-height: 1;
+      touch-action: manipulation;
+    }
+    .stepper-btn:active { background: var(--surface2); }
+    .stepper-val {
+      min-width: 2.2ch;
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 7px 6px;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+    }
+
+    /* Number inputs */
+    .perfil-num-input {
+      width: 110px;
+      text-align: right;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 0.9rem;
+      background: var(--surface);
+      color: var(--text);
+    }
+    .perfil-num-input::placeholder { color: var(--text-muted); font-size: 0.82rem; }
+
+    /* Text input (colonias) */
+    .perfil-text-input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    /* Colonias chips */
+    .colonias-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 8px;
+      margin-bottom: 10px;
+    }
+    .colonia-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 6px 4px 12px;
+      font-size: 0.85rem;
+    }
+    .chip-remove {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 1rem;
+      line-height: 1;
+      padding: 0 2px;
+    }
+    .chip-remove:hover { color: var(--text); }
+    .colonias-input-row { display: flex; gap: 8px; }
+
+    /* Amenidades tri-toggle */
+    .amenidad-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .amenidad-row:last-child { border-bottom: none; }
+    .amenidad-label { font-size: 0.9rem; color: var(--text-muted); }
+
+    .tri-toggle {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .tri-btn {
+      background: none;
+      border: none;
+      border-right: 1px solid var(--border);
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      white-space: nowrap;
+      touch-action: manipulation;
+      transition: background 0.12s, color 0.12s;
+    }
+    .tri-btn:last-child { border-right: none; }
+    .tri-btn.active { background: var(--accent); color: #fff; }
+
+    /* Save button */
+    .btn-save-perfil {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: var(--radius);
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      margin-bottom: 16px;
+      touch-action: manipulation;
+    }
+    .btn-save-perfil:active { opacity: 0.85; }

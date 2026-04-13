@@ -13,7 +13,7 @@
   <header id="appHeader">
     <div id="headerBrand"><h1>🏠 Apt Hunter</h1><p class="subtitle">Fotografía un letrero y genera tu mensaje de WhatsApp al instante.</p></div>
     <div id="headerRight">
-      <nav class="tabs-top"><button class="view-tab active" id="tabScan" data-tab="scan">📷 Escanear</button><button class="view-tab" id="tabArchive" data-tab="archive">🗂 Archivo</button></nav>
+      <nav class="tabs-top"><button class="view-tab active" id="tabScan" data-tab="scan">📷 Escanear</button><button class="view-tab" id="tabArchive" data-tab="archive">🗂 Archivo</button><button class="view-tab" id="tabPerfil" data-tab="perfil">🎯 Perfil</button></nav>
       <button class="btn-settings" id="btnSettings" title="Ajustes">⚙️</button>
     </div>
   </header>
@@ -73,6 +73,56 @@
       <div id="archiveList"></div>
     </div>
     <div id="galleryView" style="display:none;"></div>
+    <div id="perfilView" style="display:none;">
+      <div class="card">
+        <div class="card-label">Básicos</div>
+        <div class="perfil-row">
+          <span class="perfil-label">Recámaras mínimas</span>
+          <div class="stepper" id="perfilStepRecamaras">
+            <button class="stepper-btn" data-action="dec">−</button>
+            <span class="stepper-val" id="perfilValRecamaras">2</span>
+            <button class="stepper-btn" data-action="inc">+</button>
+          </div>
+        </div>
+        <div class="perfil-row">
+          <span class="perfil-label">Baños mínimos</span>
+          <div class="stepper" id="perfilStepBanos">
+            <button class="stepper-btn" data-action="dec">−</button>
+            <span class="stepper-val" id="perfilValBanos">1</span>
+            <button class="stepper-btn" data-action="inc">+</button>
+          </div>
+        </div>
+        <div class="perfil-row">
+          <span class="perfil-label">Estacionamientos mínimos</span>
+          <div class="stepper" id="perfilStepEst">
+            <button class="stepper-btn" data-action="dec">−</button>
+            <span class="stepper-val" id="perfilValEst">0</span>
+            <button class="stepper-btn" data-action="inc">+</button>
+          </div>
+        </div>
+        <div class="perfil-row">
+          <span class="perfil-label">Precio máximo (MXN)</span>
+          <input type="number" id="perfilPrecioMax" class="perfil-num-input" placeholder="sin límite" min="0">
+        </div>
+        <div class="perfil-row">
+          <span class="perfil-label">Tamaño mínimo (m²)</span>
+          <input type="number" id="perfilTamanoMin" class="perfil-num-input" placeholder="sin límite" min="0">
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">Colonias preferidas</div>
+        <div class="colonias-chips" id="coloniasChips"></div>
+        <div class="colonias-input-row">
+          <input type="text" id="coloniasInput" class="perfil-text-input" placeholder="Agregar colonia…">
+          <button class="btn btn-ghost" id="btnAddColonia">Agregar</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">Amenidades</div>
+        <div id="amenidadesRows"></div>
+      </div>
+      <button class="btn btn-save-perfil" id="btnSavePerfil">Guardar perfil</button>
+    </div>
   </div>
 </div>
 <div class="settings-backdrop" id="settingsBackdrop"></div>
@@ -87,6 +137,7 @@
 <nav class="tabs-bottom" id="tabsBottom">
   <button class="bottom-tab active" data-tab="scan"><span class="tab-icon">📷</span>Escanear</button>
   <button class="bottom-tab" data-tab="archive"><span class="tab-icon">🗂</span>Archivo</button>
+  <button class="bottom-tab" data-tab="perfil"><span class="tab-icon">🎯</span>Perfil</button>
 </nav>
 <div class="toast" id="toast"></div>
 <script type="module" src="src/app.js"></script>
