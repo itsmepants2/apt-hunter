@@ -634,6 +634,39 @@
     .breakdown-must-miss td {
       background: rgba(239, 68, 68, 0.08);
     }
+
+    /* ── Amenity pills ───────────────────────────────────────────────────────── */
+    .amenity-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 10px 16px 4px;
+    }
+
+    .amenity-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .amenity-pill--known {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .amenity-pill--unknown {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      font-style: italic;
+    }
+
     .archive-photo-main:hover .photo-delete-btn,
     .archive-photo-cell:hover  .photo-delete-btn { opacity: 1; }
     .gallery-photo-wrap:hover  .photo-delete-btn { opacity: 1; }

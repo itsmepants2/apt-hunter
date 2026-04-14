@@ -990,6 +990,64 @@ export function buildArchiveCard(entry, scoreResult = null) {
     card.appendChild(buildBreakdownSection(sr));
   }
 
+  // ── Amenity pills ──
+  if (entry.amenities && entry.amenities.trim()) {
+    const AMENIDAD_MAP = {
+      elevador:    { label: 'Elevador',      icon: '🛗' },
+      terraza:     { label: 'Terraza',       icon: '🌿' },
+      seguridad24h:{ label: 'Seguridad 24h', icon: '🔒' },
+      gimnasio:    { label: 'Gimnasio',      icon: '🏋️' },
+      alberca:     { label: 'Alberca',       icon: '🏊' },
+      mascotas:    { label: 'Mascotas',      icon: '🐾' },
+      amueblado:   { label: 'Amueblado',     icon: '🛋️' },
+    };
+
+    const AMENIDAD_KEYWORDS_UI = {
+      elevador:    ['elevador'],
+      terraza:     ['terraza', 'balcón', 'balcon'],
+      seguridad24h:['seguridad 24', 'seguridad24'],
+      gimnasio:    ['gimnasio', 'gym'],
+      alberca:     ['alberca'],
+      mascotas:    ['mascota', 'pets', 'pet-friendly'],
+      amueblado:   ['amueblado', 'amoblado', 'furnished'],
+    };
+
+    const raw = entry.amenities.toLowerCase();
+    const matched = new Set();
+
+    Object.entries(AMENIDAD_KEYWORDS_UI).forEach(([key, keywords]) => {
+      if (keywords.some(kw => raw.includes(kw))) matched.add(key);
+    });
+
+    const tokens = entry.amenities.split(',').map(t => t.trim()).filter(Boolean);
+    const unknownTokens = tokens.filter(token => {
+      const tl = token.toLowerCase();
+      return !Object.values(AMENIDAD_KEYWORDS_UI).flat().some(kw => tl.includes(kw));
+    });
+
+    if (matched.size > 0 || unknownTokens.length > 0) {
+      const pillRow = document.createElement('div');
+      pillRow.className = 'amenity-pills';
+
+      matched.forEach(key => {
+        const { label, icon } = AMENIDAD_MAP[key];
+        const pill = document.createElement('span');
+        pill.className = 'amenity-pill amenity-pill--known';
+        pill.textContent = `${icon} ${label}`;
+        pillRow.appendChild(pill);
+      });
+
+      unknownTokens.forEach(token => {
+        const pill = document.createElement('span');
+        pill.className = 'amenity-pill amenity-pill--unknown';
+        pill.textContent = token;
+        pillRow.appendChild(pill);
+      });
+
+      card.appendChild(pillRow);
+    }
+  }
+
   // ── Info row (date, detail, phones) ──
   const top = document.createElement('div');
   top.className = 'archive-card-top';
