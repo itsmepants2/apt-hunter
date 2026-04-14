@@ -960,6 +960,11 @@ export function buildArchiveCard(entry, scoreResult = null) {
   statsBar.appendChild(statsGrid);
   card.appendChild(statsBar);
 
+  // ── Match breakdown ──
+  if (sr !== null && sr.total !== null) {
+    card.appendChild(buildBreakdownSection(sr));
+  }
+
   // ── Info row (date, detail, phones) ──
   const top = document.createElement('div');
   top.className = 'archive-card-top';
@@ -1143,11 +1148,6 @@ export function buildArchiveCard(entry, scoreResult = null) {
   if (fieldInputs.priceMxn) fieldInputs.priceMxn.addEventListener('blur', updateComputedRow);
   if (fieldInputs.sizeSqm)  fieldInputs.sizeSqm.addEventListener('blur', updateComputedRow);
   card.appendChild(computedRow);
-
-  // ── Match breakdown ──
-  if (sr !== null && sr.total !== null) {
-    card.appendChild(buildBreakdownSection(sr));
-  }
 
   // ── Bottom row: notes + delete ──
   const bottom = document.createElement('div');
