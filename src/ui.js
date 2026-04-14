@@ -904,17 +904,6 @@ export function buildArchiveCard(entry, scoreResult = null) {
   }
   photosSection.appendChild(photoGrid);
 
-  // ── Score badge ──
-  if (sr !== null && sr.total !== null) {
-    const { total } = sr;
-    const badge = document.createElement('div');
-    badge.className = 'score-badge'
-      + (total >= 75 ? ' score-green' : total >= 50 ? ' score-amber' : ' score-red');
-    badge.textContent = `${total}%`;
-    photosSection.style.position = 'relative';
-    photosSection.appendChild(badge);
-  }
-
   // "Ver todas" button — mobile only (hidden on desktop via CSS)
   if (allPhotos.length > 1) {
     const verBtn = document.createElement('button');
@@ -932,6 +921,39 @@ export function buildArchiveCard(entry, scoreResult = null) {
   heroWrapper.appendChild(photosSection);
   heroWrapper.appendChild(headlineInput);
   card.appendChild(heroWrapper);
+
+  // ── Stats bar (score + key fields display) ──
+  const statsBar = document.createElement('div');
+  statsBar.className = 'card-stats-bar';
+
+  const scoreEl = document.createElement('div');
+  scoreEl.className = 'stats-score';
+  if (sr !== null && sr.total !== null) {
+    scoreEl.innerHTML = `<span class="stats-score-number">${sr.total}</span><span class="stats-score-denom">/100</span>`;
+  } else {
+    scoreEl.innerHTML = `<span class="stats-score-number" style="color:var(--text-muted)">—</span>`;
+  }
+
+  const statsGrid = document.createElement('div');
+  statsGrid.className = 'stats-grid';
+
+  const statItems = [
+    { value: entry.bedrooms ?? '—', label: 'Recámaras' },
+    { value: entry.bathrooms ?? '—', label: 'Baños' },
+    { value: entry.sizeSqm ? `${entry.sizeSqm} m²` : '—', label: entry.sizeSqm ? `${Math.round(entry.sizeSqm * 10.764)} ft²` : '' },
+    { value: entry.neighborhood || '—', label: 'Colonia' },
+  ];
+
+  statItems.forEach(({ value, label }) => {
+    const item = document.createElement('div');
+    item.className = 'stat-item';
+    item.innerHTML = `<div class="stat-value">${escHtml(String(value))}</div><div class="stat-label">${escHtml(label)}</div>`;
+    statsGrid.appendChild(item);
+  });
+
+  statsBar.appendChild(scoreEl);
+  statsBar.appendChild(statsGrid);
+  card.appendChild(statsBar);
 
   // ── Info row (date, detail, phones) ──
   const top = document.createElement('div');
