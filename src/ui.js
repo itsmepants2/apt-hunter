@@ -94,11 +94,6 @@ function buildBreakdownSection(sr) {
     }
   }
 
-  function pointsLabel(score, max) {
-    if (max === 3 && score !== 3) return '−8 ✗';
-    return `${score}/${max}`;
-  }
-
   const section = document.createElement('div');
   section.className = 'score-breakdown';
 
@@ -113,15 +108,22 @@ function buildBreakdownSection(sr) {
   table.innerHTML = `
     <thead>
       <tr>
+        <th></th>
         <th>Criterio</th>
         <th>Ideal</th>
         <th>Propiedad</th>
-        <th>Pts</th>
       </tr>
     </thead>
   `;
 
   const tbody = document.createElement('tbody');
+
+  function statusEmoji(score, max) {
+    if (max === 3 && score !== 3) return '❌';
+    if (score >= max)              return '✅';
+    if (score > 0)                 return '⚠️';
+    return '❌';
+  }
 
   Object.entries(breakdown).forEach(([key, { score, max, label }]) => {
     if (max === 0) return;
@@ -129,14 +131,11 @@ function buildBreakdownSection(sr) {
     const tr = document.createElement('tr');
     if (max === 3 && score !== 3) tr.className = 'breakdown-must-miss';
 
-    const ptsLabel = pointsLabel(score, max);
-    const ptsColor = score >= max ? '#4caf50' : score <= 0 ? '#f44336' : '#ff9800';
-
     tr.innerHTML = `
+      <td class="bd-status">${statusEmoji(score, max)}</td>
       <td class="bd-criterion">${escHtml(CRITERION_LABELS[key] ?? key)}</td>
       <td class="bd-ideal">${escHtml(idealLabel(key))}</td>
       <td class="bd-actual">${escHtml(label)}</td>
-      <td class="bd-pts" style="color:${ptsColor}">${ptsLabel}</td>
     `;
     tbody.appendChild(tr);
   });

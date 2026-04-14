@@ -624,10 +624,11 @@
       font-style: italic;
     }
 
-    .bd-pts {
-      font-weight: 700;
-      text-align: right;
-      white-space: nowrap;
+    .bd-status {
+      font-size: 1rem;
+      text-align: center;
+      width: 28px;
+      padding-right: 4px;
     }
 
     .breakdown-must-miss td {
