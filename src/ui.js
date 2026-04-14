@@ -929,10 +929,15 @@ export function buildArchiveCard(entry, scoreResult = null) {
   const scoreEl = document.createElement('div');
   scoreEl.className = 'stats-score';
   if (sr !== null && sr.total !== null) {
-    scoreEl.innerHTML = `<span class="stats-score-number">${sr.total}</span><span class="stats-score-denom">/100</span>`;
+    const scoreColor = sr.total >= 75 ? '#4caf50' : sr.total >= 50 ? '#ff9800' : '#f44336';
+    scoreEl.innerHTML = `<div class="stats-score-number-row"><span class="stats-score-number" style="color:${scoreColor}">${sr.total}</span><span class="stats-score-denom">/100</span></div>`;
   } else {
-    scoreEl.innerHTML = `<span class="stats-score-number" style="color:var(--text-muted)">—</span>`;
+    scoreEl.innerHTML = `<div class="stats-score-number-row"><span class="stats-score-number" style="color:var(--text-muted)">—</span></div>`;
   }
+  const scoreLabel = document.createElement('div');
+  scoreLabel.className = 'stat-label';
+  scoreLabel.textContent = 'SCORE TOTAL';
+  scoreEl.appendChild(scoreLabel);
 
   const statsGrid = document.createElement('div');
   statsGrid.className = 'stats-grid';

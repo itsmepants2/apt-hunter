@@ -717,9 +717,15 @@
 
     .stats-score {
       display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      flex-shrink: 0;
+    }
+
+    .stats-score-number-row {
+      display: flex;
       align-items: baseline;
       gap: 2px;
-      flex-shrink: 0;
     }
 
     .stats-score-number {
