@@ -64,59 +64,85 @@ function toScoringEntry(e) {
   };
 }
 
-function buildBreakdownSection({ total, breakdown }) {
-  const colorClass = total >= 75 ? 'score-green' : total >= 50 ? 'score-amber' : 'score-red';
+function buildBreakdownSection(sr) {
+  const profile = loadScoringProfile();
+  const { total, breakdown } = sr;
+
+  function idealLabel(key) {
+    if (!profile) return '—';
+    switch (key) {
+      case 'recamaras':
+        return profile.recamaras != null ? `≥ ${profile.recamaras} rec.` : '—';
+      case 'banos':
+        return profile.banos != null ? `≥ ${profile.banos} baños` : '—';
+      case 'estacionamiento':
+        return profile.estacionamiento != null ? `≥ ${profile.estacionamiento}` : '—';
+      case 'precio':
+        return profile.precio != null
+          ? `≤ $${Number(profile.precio).toLocaleString('es-MX')}`
+          : '—';
+      case 'tamano':
+        return profile.tamano != null ? `≥ ${profile.tamano} m²` : '—';
+      case 'colonias':
+        return profile.coloniasPreferidas?.length
+          ? profile.coloniasPreferidas.join(', ')
+          : '—';
+      default: {
+        const pref = profile[key];
+        return pref === 'must' ? 'must-have' : pref === 'want' ? 'deseable' : '—';
+      }
+    }
+  }
+
+  function pointsLabel(score, max) {
+    if (max === 3 && score !== 3) return '−8 ✗';
+    return `${score}/${max}`;
+  }
 
   const section = document.createElement('div');
   section.className = 'score-breakdown';
 
+  const headerColor = total >= 75 ? '#4caf50' : total >= 50 ? '#ff9800' : '#f44336';
   const header = document.createElement('div');
-  header.className = `score-breakdown-header ${colorClass}`;
-  header.textContent = `🎯 Match  ${total}%`;
+  header.className = 'breakdown-header';
+  header.innerHTML = `<span style="color:${headerColor}">🎯 Match ${total}%</span>`;
   section.appendChild(header);
 
-  const grid = document.createElement('div');
-  grid.className = 'score-breakdown-grid';
+  const table = document.createElement('table');
+  table.className = 'breakdown-table';
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Criterio</th>
+        <th>Ideal</th>
+        <th>Propiedad</th>
+        <th>Pts</th>
+      </tr>
+    </thead>
+  `;
+
+  const tbody = document.createElement('tbody');
 
   Object.entries(breakdown).forEach(([key, { score, max, label }]) => {
-    if (max === 0) return; // skip inactive criteria
+    if (max === 0) return;
 
-    const isMustMiss = max === 3 && score !== 3; // must-have penalty
-    const fillPct    = Math.max(0, Math.min(100, (score / max) * 100));
-    const fillColor  = score >= max ? 'score-green' : score > 0 ? 'score-amber' : 'score-red';
-    const icon       = score >= max ? '✓' : '✗';
-    const iconColor  = score >= max ? 'score-green' : 'score-red';
+    const tr = document.createElement('tr');
+    if (max === 3 && score !== 3) tr.className = 'breakdown-must-miss';
 
-    const row = document.createElement('div');
-    row.className = 'breakdown-row' + (isMustMiss ? ' breakdown-must-miss' : '');
+    const ptsLabel = pointsLabel(score, max);
+    const ptsColor = score >= max ? '#4caf50' : score <= 0 ? '#f44336' : '#ff9800';
 
-    const nameEl = document.createElement('span');
-    nameEl.className = 'breakdown-name';
-    nameEl.textContent = CRITERION_LABELS[key] || key;
-
-    const barWrap = document.createElement('div');
-    barWrap.className = 'breakdown-bar-wrap';
-    const barFill = document.createElement('div');
-    barFill.className = `breakdown-bar-fill ${fillColor}`;
-    barFill.style.width = `${fillPct}%`;
-    barWrap.appendChild(barFill);
-
-    const resultEl = document.createElement('span');
-    resultEl.className = `breakdown-result ${iconColor}`;
-    resultEl.textContent = icon;
-
-    const labelEl = document.createElement('span');
-    labelEl.className = 'breakdown-label';
-    labelEl.textContent = label;
-
-    row.appendChild(nameEl);
-    row.appendChild(barWrap);
-    row.appendChild(resultEl);
-    row.appendChild(labelEl);
-    grid.appendChild(row);
+    tr.innerHTML = `
+      <td class="bd-criterion">${escHtml(CRITERION_LABELS[key] ?? key)}</td>
+      <td class="bd-ideal">${escHtml(idealLabel(key))}</td>
+      <td class="bd-actual">${escHtml(label)}</td>
+      <td class="bd-pts" style="color:${ptsColor}">${ptsLabel}</td>
+    `;
+    tbody.appendChild(tr);
   });
 
-  section.appendChild(grid);
+  table.appendChild(tbody);
+  section.appendChild(table);
   return section;
 }
 
