@@ -951,6 +951,40 @@ export function buildArchiveCard(entry, scoreResult = null) {
   const statsBar = document.createElement('div');
   statsBar.className = 'card-stats-bar';
 
+  // ── Price + Colonia (far left) ──
+  const priceEl = document.createElement('div');
+  priceEl.className = 'stat-item stat-price-col';
+  const priceMxnNum = parsePriceMxn(entry.priceMxn);
+  if (priceMxnNum) {
+    const mxnFormatted = '$' + priceMxnNum.toLocaleString('es-MX');
+    const usdNum = mxnToUsdRate ? Math.round(priceMxnNum * mxnToUsdRate) : null;
+    const usdStr = usdNum !== null
+      ? (usdNum >= 1000 ? `~$${Math.round(usdNum / 1000)}k USD` : `~$${usdNum} USD`)
+      : '';
+    priceEl.innerHTML = `<div class="stat-value">${escHtml(mxnFormatted)}</div>`
+      + (usdStr ? `<div class="stat-price-usd">${escHtml(usdStr)}</div>` : '')
+      + `<div class="stat-label">${escHtml(entry.neighborhood || '—')}</div>`;
+  } else {
+    priceEl.innerHTML = `<div class="stat-value">—</div><div class="stat-label">${escHtml(entry.neighborhood || '—')}</div>`;
+  }
+
+  const statsGrid = document.createElement('div');
+  statsGrid.className = 'stats-grid';
+
+  const statItems = [
+    { value: entry.bedrooms ?? '—', label: 'Recámaras' },
+    { value: entry.bathrooms ?? '—', label: 'Baños' },
+    { value: entry.sizeSqm ? `${entry.sizeSqm} m²` : '—', label: entry.sizeSqm ? `${Math.round(entry.sizeSqm * 10.764)} ft²` : '' },
+  ];
+
+  statItems.forEach(({ value, label }) => {
+    const item = document.createElement('div');
+    item.className = 'stat-item';
+    item.innerHTML = `<div class="stat-value">${escHtml(String(value))}</div><div class="stat-label">${escHtml(label)}</div>`;
+    statsGrid.appendChild(item);
+  });
+
+  // ── Score (far right) ──
   const scoreEl = document.createElement('div');
   scoreEl.className = 'stats-score';
   if (sr !== null && sr.total !== null) {
@@ -964,25 +998,9 @@ export function buildArchiveCard(entry, scoreResult = null) {
   scoreLabel.textContent = 'SCORE TOTAL';
   scoreEl.appendChild(scoreLabel);
 
-  const statsGrid = document.createElement('div');
-  statsGrid.className = 'stats-grid';
-
-  const statItems = [
-    { value: entry.bedrooms ?? '—', label: 'Recámaras' },
-    { value: entry.bathrooms ?? '—', label: 'Baños' },
-    { value: entry.sizeSqm ? `${entry.sizeSqm} m²` : '—', label: entry.sizeSqm ? `${Math.round(entry.sizeSqm * 10.764)} ft²` : '' },
-    { value: entry.neighborhood || '—', label: 'Colonia' },
-  ];
-
-  statItems.forEach(({ value, label }) => {
-    const item = document.createElement('div');
-    item.className = 'stat-item';
-    item.innerHTML = `<div class="stat-value">${escHtml(String(value))}</div><div class="stat-label">${escHtml(label)}</div>`;
-    statsGrid.appendChild(item);
-  });
-
-  statsBar.appendChild(scoreEl);
+  statsBar.appendChild(priceEl);
   statsBar.appendChild(statsGrid);
+  statsBar.appendChild(scoreEl);
   card.appendChild(statsBar);
 
   // ── Match breakdown ──

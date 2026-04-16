@@ -797,6 +797,13 @@
       margin-top: 2px;
     }
 
+    .stat-price-usd {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      line-height: 1.2;
+    }
+
     /* ── Card headline — specificity must beat input[type="text"] (0,1,1) ───── */
     input[type="text"].archive-headline {
       position: absolute;
