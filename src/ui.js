@@ -998,9 +998,13 @@ export function buildArchiveCard(entry, scoreResult = null) {
   scoreLabel.textContent = 'SCORE TOTAL';
   scoreEl.appendChild(scoreLabel);
 
+  const statsBarRight = document.createElement('div');
+  statsBarRight.className = 'stats-bar-right';
+  statsBarRight.appendChild(statsGrid);
+  statsBarRight.appendChild(scoreEl);
+
   statsBar.appendChild(priceEl);
-  statsBar.appendChild(statsGrid);
-  statsBar.appendChild(scoreEl);
+  statsBar.appendChild(statsBarRight);
   card.appendChild(statsBar);
 
   // ── Match breakdown ──
