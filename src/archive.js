@@ -24,7 +24,7 @@ export const archiveFilter = { sort: '', colonia: '', bedrooms: '', tipo: '' };
 
 // ── Exchange rate: MXN → USD ──────────────────────────────────────────────
 export let mxnToUsdRate = null;
-fetch('https://api.frankfurter.app/latest?from=MXN&to=USD')
+fetch('https://apt-hunter-proxy.stevebryant.workers.dev/fx')
   .then(r => r.json())
   .then(d => {
     console.log('[fx-debug] API response:', JSON.stringify(d));

@@ -12,7 +12,8 @@
  *   ALLOWED_ORIGIN  — restricts CORS to a specific origin (defaults to *)
  */
 
-const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
+const ANTHROPIC_API  = 'https://api.anthropic.com/v1/messages';
+const FRANKFURTER_FX = 'https://api.frankfurter.app/latest?from=MXN&to=USD';
 
 // ── CORS helpers ──────────────────────────────────────────────────────────────
 
@@ -83,6 +84,22 @@ async function handleAnthropic(req, env) {
 }
 
 /**
+ * GET /fx
+ * Fetches the MXN→USD exchange rate from Frankfurter server-side,
+ * avoiding browser CORS restrictions. Returns the Frankfurter JSON as-is.
+ */
+async function handleFx() {
+  let upstream;
+  try {
+    upstream = await fetch(FRANKFURTER_FX);
+  } catch (e) {
+    return err(`Failed to fetch exchange rate: ${e.message}`, 502);
+  }
+  const data = await upstream.json();
+  return json(data, upstream.status);
+}
+
+/**
  * GET /fetch?url=<url>
  * Fetches the given URL from the Worker edge (no browser CORS restrictions)
  * and returns the response body as plain text.
@@ -149,6 +166,8 @@ export default {
     let response;
     if (pathname === '/anthropic' && req.method === 'POST') {
       response = await handleAnthropic(req, env);
+    } else if (pathname === '/fx' && req.method === 'GET') {
+      response = await handleFx();
     } else if (pathname === '/fetch' && req.method === 'GET') {
       response = await handleFetch(req);
     } else {
