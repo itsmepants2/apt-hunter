@@ -26,7 +26,10 @@ export const archiveFilter = { sort: '', colonia: '', bedrooms: '', tipo: '' };
 export let mxnToUsdRate = null;
 fetch('https://api.frankfurter.app/latest?from=MXN&to=USD')
   .then(r => r.json())
-  .then(d => { mxnToUsdRate = d.rates?.USD || null; })
+  .then(d => {
+    mxnToUsdRate = d.rates?.USD || null;
+    renderArchive();
+  })
   .catch(() => {});
 
 // ── Archive: persistence ──────────────────────────────────────────────────
