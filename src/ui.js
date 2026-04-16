@@ -1030,6 +1030,9 @@ export function buildArchiveCard(entry, scoreResult = null) {
       pillRow.className = 'amenity-pills';
 
       matched.forEach(key => {
+        // Skip if already shown in the score breakdown table
+        if (sr !== null && sr.breakdown?.[key]?.max > 0) return;
+
         const { label, icon } = AMENIDAD_MAP[key];
         const pill = document.createElement('span');
         pill.className = 'amenity-pill amenity-pill--known';
@@ -1044,7 +1047,7 @@ export function buildArchiveCard(entry, scoreResult = null) {
         pillRow.appendChild(pill);
       });
 
-      card.appendChild(pillRow);
+      if (pillRow.children.length > 0) card.appendChild(pillRow);
     }
   }
 
