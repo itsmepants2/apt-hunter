@@ -27,10 +27,15 @@ export let mxnToUsdRate = null;
 fetch('https://api.frankfurter.app/latest?from=MXN&to=USD')
   .then(r => r.json())
   .then(d => {
+    console.log('[fx-debug] API response:', JSON.stringify(d));
     mxnToUsdRate = d.rates?.USD || null;
+    console.log('[fx-debug] mxnToUsdRate set to:', mxnToUsdRate);
     renderArchive();
+    console.log('[fx-debug] renderArchive() called');
   })
-  .catch(() => {});
+  .catch(e => {
+    console.log('[fx-debug] fetch FAILED:', e.message);
+  });
 
 // ── Archive: persistence ──────────────────────────────────────────────────
 export function loadArchive() {
