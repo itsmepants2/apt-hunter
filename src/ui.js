@@ -955,7 +955,6 @@ export function buildArchiveCard(entry, scoreResult = null) {
   const priceEl = document.createElement('div');
   priceEl.className = 'stat-item stat-price-col';
   const priceMxnNum = parsePriceMxn(entry.priceMxn);
-  console.log('[fx-debug] buildArchiveCard mxnToUsdRate:', mxnToUsdRate);
   if (priceMxnNum) {
     const mxnFormatted = '$' + priceMxnNum.toLocaleString('es-MX');
     const usdNum = mxnToUsdRate ? Math.round(priceMxnNum * mxnToUsdRate) : null;
