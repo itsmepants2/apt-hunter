@@ -946,6 +946,28 @@
       .filter-clear  { padding: 6px 0; }
     }
 
+    /* ── Collapsible details toggle ─────────────────────────────────────────── */
+    .btn-details-toggle {
+      display: block;
+      width: calc(100% - 32px);
+      margin: 8px 16px 0;
+      padding: 8px 12px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s;
+    }
+
+    .btn-details-toggle:hover {
+      background: var(--surface-alt, var(--surface));
+      color: var(--text);
+    }
+
     /* ── Computed pricing row ────────────────────────────────────────────────── */
     .archive-computed-row {
       border-top: 1px solid var(--border);

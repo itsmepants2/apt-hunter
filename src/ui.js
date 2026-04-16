@@ -1084,6 +1084,26 @@ export function buildArchiveCard(entry, scoreResult = null) {
   });
   card.appendChild(statusBar);
 
+  // ── Collapsible details section ──
+  const detailsToggle = document.createElement('button');
+  detailsToggle.className = 'btn-details-toggle';
+  detailsToggle.innerHTML = '＋ Ver y editar detalles';
+
+  const detailsBody = document.createElement('div');
+  detailsBody.className = 'details-body';
+  detailsBody.hidden = true;
+
+  detailsToggle.addEventListener('click', () => {
+    const open = !detailsBody.hidden;
+    detailsBody.hidden = open;
+    detailsToggle.innerHTML = open
+      ? '＋ Ver y editar detalles'
+      : '－ Ocultar detalles';
+  });
+
+  card.appendChild(detailsToggle);
+  card.appendChild(detailsBody);
+
   // ── Property fields ──
   const fieldDefs = [
     { key: 'bedrooms',     label: '# Recámaras',  type: 'number', placeholder: '—' },
@@ -1189,7 +1209,7 @@ export function buildArchiveCard(entry, scoreResult = null) {
     fieldsRow.appendChild(wrap);
   });
 
-  card.appendChild(fieldsRow);
+  detailsBody.appendChild(fieldsRow);
 
   // ── Computed pricing summary row ──
   const computedRow = document.createElement('div');
@@ -1233,7 +1253,7 @@ export function buildArchiveCard(entry, scoreResult = null) {
   // Re-compute when price or size change
   if (fieldInputs.priceMxn) fieldInputs.priceMxn.addEventListener('blur', updateComputedRow);
   if (fieldInputs.sizeSqm)  fieldInputs.sizeSqm.addEventListener('blur', updateComputedRow);
-  card.appendChild(computedRow);
+  detailsBody.appendChild(computedRow);
 
   // ── Bottom row: notes + delete ──
   const bottom = document.createElement('div');
