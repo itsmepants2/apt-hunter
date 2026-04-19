@@ -189,6 +189,7 @@ function renderPerfil() {
 // ── Init (runs after DOM ready — module scripts are deferred by default) ────
 (async function init() {
   // ── Auth gate ──
+  const appShell   = document.getElementById('appShell');
   const authView   = document.getElementById('authView');
   const appHeader  = document.getElementById('appHeader');
   const tabContent = document.getElementById('tabContent');
@@ -211,8 +212,16 @@ function renderPerfil() {
   document.getElementById('btnGoogleSignIn').addEventListener('click', signInWithGoogle);
 
   onAuthStateChange((_event, session) => {
-    if (session) hideAuth();
-    else showAuth();
+    if (session) {
+      hideAuth();
+      if (appShell.style.visibility !== 'visible') {
+        renderArchive();
+        updateHasEntries();
+        appShell.style.visibility = 'visible';
+      }
+    } else {
+      showAuth();
+    }
   });
 
   const session = await getSession();
@@ -456,6 +465,7 @@ function renderPerfil() {
   renderScorecard();
   renderArchive();
   updateHasEntries();
+  appShell.style.visibility = 'visible';
   gistPull();
 
   // ── PWA Service Worker ──
