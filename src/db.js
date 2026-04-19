@@ -32,3 +32,16 @@ export async function saveEntry(entry) {
     return null;
   }
 }
+
+export async function deleteEntry(id) {
+  try {
+    const supabase = getSupabaseClient();
+    const { error } = await supabase
+      .from('entries')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  } catch {
+    // fire-and-forget — suppress errors
+  }
+}

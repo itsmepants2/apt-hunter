@@ -5,7 +5,7 @@
 // exported function is invoked.
 import { gistPush, gistPull, getGhToken, getGistId } from './sync.js';
 import { showToast, renderArchive, renderScorecard, renderGallery } from './ui.js';
-import { loadEntries } from './db.js';
+import { loadEntries, saveEntry, deleteEntry } from './db.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────
 export const STATUSES = [
@@ -63,6 +63,7 @@ export function saveToArchiveDirect(result, thumbnail) {
   };
   archive.unshift(entry);
   store.set('apt_hunter_archive', JSON.stringify(archive));
+  saveEntry(entry);
   gistPush();
   renderScorecard();
   return true;
@@ -74,6 +75,7 @@ export function saveArchiveField(id, key, value) {
   if (idx !== -1) {
     archive[idx][key] = value;
     store.set('apt_hunter_archive', JSON.stringify(archive));
+    saveEntry(archive[idx]);
     gistPush();
   }
 }
@@ -85,6 +87,7 @@ export function saveArchivePhotoAdd(id, thumbDataUrl) {
     if (!archive[idx].extraPhotos) archive[idx].extraPhotos = [];
     archive[idx].extraPhotos.push(thumbDataUrl);
     store.set('apt_hunter_archive', JSON.stringify(archive));
+    saveEntry(archive[idx]);
     gistPush();
   }
 }
@@ -92,6 +95,7 @@ export function saveArchivePhotoAdd(id, thumbDataUrl) {
 export function deleteArchiveEntry(id) {
   const archive = loadArchive().filter(e => e.id !== id);
   store.set('apt_hunter_archive', JSON.stringify(archive));
+  deleteEntry(id);
   gistPush();
   renderArchive();
   renderScorecard();
