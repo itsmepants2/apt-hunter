@@ -24,21 +24,15 @@ export const store = {
 // ── Archive: filter state ─────────────────────────────────────────────────
 export const archiveFilter = { sort: '', colonia: '', bedrooms: '', tipo: '' };
 
-// ── Supabase entries cache (populated in background after auth confirmed) ────
+// ── Supabase entries cache ─────────────────────────────────────────────────
+// dbReady resolves once the session is confirmed and entries are fetched.
+// Callers should await dbReady before rendering data-dependent UI.
 let _dbCache = null;
-(async () => {
+export const dbReady = (async () => {
   const session = await getSession();
   if (!session) return;
   const rows = await loadEntries();
-  if (rows.length > 0) {
-    _dbCache = rows;
-    renderArchive();
-    const archiveList = document.getElementById('archiveList');
-    const homeView    = document.getElementById('homeView');
-    if (archiveList && homeView) {
-      homeView.classList.toggle('has-entries', archiveList.children.length > 0);
-    }
-  }
+  if (rows.length > 0) _dbCache = rows;
 })();
 
 // ── Exchange rate: MXN → USD ──────────────────────────────────────────────

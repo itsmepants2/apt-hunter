@@ -5,6 +5,7 @@ import {
   initGalleryMode,
   readFileAsDataUrl,
   saveToArchiveDirect,
+  dbReady,
 } from './archive.js';
 
 import {
@@ -211,11 +212,13 @@ function renderPerfil() {
 
   document.getElementById('btnGoogleSignIn').addEventListener('click', signInWithGoogle);
 
-  onAuthStateChange((_event, session) => {
+  onAuthStateChange(async (_event, session) => {
     if (session) {
       hideAuth();
       if (appShell.style.visibility !== 'visible') {
+        await dbReady;
         renderArchive();
+        renderScorecard();
         updateHasEntries();
         appShell.style.visibility = 'visible';
       }
@@ -462,8 +465,9 @@ function renderPerfil() {
   const _galleryParam = new URLSearchParams(location.search).get('property');
   if (_galleryParam) initGalleryMode(_galleryParam);
 
-  renderScorecard();
+  await dbReady;
   renderArchive();
+  renderScorecard();
   updateHasEntries();
   appShell.style.visibility = 'visible';
   gistPull();
