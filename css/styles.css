@@ -1726,9 +1726,7 @@
       /* Desktop top tabs: hidden on mobile */
       #appHeader .tabs-top { display: none; }
 
-      /* Top panel hidden on mobile unless scan tab is active */
-      #topPanel { display: none; }
-      #topPanel.tab-active { display: block; }
+      /* #topPanel rules removed — replaced by #homeView layout */
 
       /* Scorecard: collapsed by default, toggle reveals it */
       .scorecard-body { display: none; }
@@ -1752,23 +1750,7 @@
 
       #appHeader { align-items: center; margin-bottom: 24px; }
 
-      /* Top panel: always visible, two columns */
-      #topPanel {
-        display: flex;
-        gap: 20px;
-        align-items: flex-start;
-        margin-bottom: 24px;
-      }
-
-      #uploadCol {
-        flex: 0 0 38%;
-        min-width: 0;
-      }
-
-      #scorecard {
-        flex: 1;
-        min-width: 0;
-      }
+      /* #topPanel layout removed — replaced by #homeView flex column */
 
       /* Scorecard toggle hidden on desktop — body always visible */
       .scorecard-toggle { display: none; }
@@ -1925,3 +1907,34 @@
       touch-action: manipulation;
     }
     .btn-save-perfil:active { opacity: 0.85; }
+
+    /* ── Home view layout ──────────────────────────────────────────────────── */
+    #homeView {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    #homeInput,
+    #homeArchive {
+      width: 100%;
+    }
+
+    /* ── Compact input state (archive has entries) ─────────────────────────── */
+    #homeView.has-entries #homeInput .capture-zone {
+      min-height: 80px;
+      height: 80px;
+    }
+
+    #homeView.has-entries #bulkCard {
+      display: none;
+    }
+
+    #homeView.has-entries #urlImportCard {
+      padding: 8px 12px;
+      margin-top: 0 !important;
+    }
+
+    #homeView.has-entries #urlImportCard .card-label {
+      display: none;
+    }

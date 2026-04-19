@@ -70,7 +70,17 @@ export function saveToArchive(waNumber, displayNumber) {
   archive.unshift(entry);
   store.set('apt_hunter_archive', JSON.stringify(archive));
   showToast('💾 Guardado en archivo ✓');
+  updateHasEntries();
   gistPush();
+}
+
+// ── has-entries state ─────────────────────────────────────────────────────
+export function updateHasEntries() {
+  const archiveList = document.getElementById('archiveList');
+  const homeView = document.getElementById('homeView');
+  if (archiveList && homeView) {
+    homeView.classList.toggle('has-entries', archiveList.children.length > 0);
+  }
 }
 
 // ── Tab switching ──────────────────────────────────────────────────────────
@@ -322,6 +332,7 @@ function renderPerfil() {
     if (succeeded > 0) {
       showToast(`${succeeded} foto${succeeded !== 1 ? 's' : ''} guardada${succeeded !== 1 ? 's' : ''} en el archivo ✓`);
       renderArchive();
+      updateHasEntries();
     }
   });
 
@@ -443,6 +454,7 @@ function renderPerfil() {
 
   renderScorecard();
   renderArchive();
+  updateHasEntries();
   gistPull();
 
   // ── PWA Service Worker ──
