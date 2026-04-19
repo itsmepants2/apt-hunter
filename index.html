@@ -63,6 +63,13 @@
   <div id="tabContent">
     <div id="homeView">
       <div id="homeInput">
+        <p class="hero-headline">Encuentra tu próximo hogar.</p>
+        <div id="heroSearchRow">
+          <input type="url" id="urlImportInput" placeholder="https://inmuebles24.com/…">
+          <button class="btn btn-ghost" id="btnAnalyzeUrl">Analizar</button>
+          <button class="btn-camera-hero" id="btnCameraHero" type="button" title="Subir foto">📷</button>
+        </div>
+        <div class="url-import-status" id="urlImportStatus"></div>
         <div id="uploadCol">
           <div class="card">
             <div class="card-label">Foto del letrero</div>
@@ -79,11 +86,6 @@
           </div>
           <button class="btn btn-analyze" id="btnAnalyze" disabled>Analizar letrero</button>
           <div class="error-box" id="errorBox"></div>
-          <div class="card" id="urlImportCard" style="margin-top:12px;">
-            <div class="card-label">O pega el URL del anuncio</div>
-            <div class="url-import-row"><input type="url" id="urlImportInput" placeholder="https://inmuebles24.com/…"><button class="btn btn-ghost" id="btnAnalyzeUrl">Analizar</button></div>
-            <div class="url-import-status" id="urlImportStatus"></div>
-          </div>
         </div>
         <div id="urlPreviewCard" style="display:none;"></div>
         <div class="results" id="results">

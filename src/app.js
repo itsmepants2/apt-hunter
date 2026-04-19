@@ -246,6 +246,7 @@ function renderPerfil() {
   btnClear.addEventListener('click', clearImage);
   fileCamera.addEventListener('change', e => handleFile(e.target.files[0]));
   fileUpload.addEventListener('change', e => handleFile(e.target.files[0]));
+  document.getElementById('btnCameraHero').addEventListener('click', () => fileUpload.click());
 
   // Drag & drop on capture zone
   captureZone.addEventListener('dragover', e => { e.preventDefault(); captureZone.style.borderColor = '#2C3A4A'; });

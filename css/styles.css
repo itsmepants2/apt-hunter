@@ -1920,21 +1920,177 @@
       width: 100%;
     }
 
-    /* ── Compact input state (archive has entries) ─────────────────────────── */
-    #homeView.has-entries #homeInput .capture-zone {
-      min-height: 80px;
-      height: 80px;
+    /* Always hide the old upload zone and bulk card — replaced by hero search row */
+    #uploadCol { display: none; }
+    #bulkCard  { display: none; }
+
+    /* ── homeInput: hero / zero state ─────────────────────────────────────── */
+    #homeInput {
+      position: relative;
+      min-height: 420px;
+      background: url('../assets/hero.jpg') center / cover no-repeat;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 40px 24px;
+      border-radius: var(--radius);
+      overflow: hidden;
     }
 
-    #homeView.has-entries #bulkCard {
+    /* Dark overlay */
+    #homeInput::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* All direct children sit above the overlay */
+    #homeInput > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Hero headline */
+    .hero-headline {
+      color: #fff;
+      font-size: 2rem;
+      font-weight: 700;
+      text-align: center;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+      line-height: 1.2;
+      margin: 0;
+    }
+
+    /* Hero search row */
+    #heroSearchRow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    #heroSearchRow input[type="url"] {
+      flex: 1;
+      min-width: 0;
+      background: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 13px 20px;
+      font-size: 0.95rem;
+      color: var(--text);
+      box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
+      outline: none;
+    }
+
+    #heroSearchRow input[type="url"]:focus {
+      box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(255, 255, 255, 0.5);
+    }
+
+    /* Analizar button — override btn-ghost in hero context */
+    #heroSearchRow #btnAnalyzeUrl {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 13px 20px;
+      flex-shrink: 0;
+    }
+
+    #heroSearchRow #btnAnalyzeUrl:hover { opacity: 0.88; }
+
+    /* Camera icon button */
+    .btn-camera-hero {
+      background: rgba(255, 255, 255, 0.18);
+      border: 1.5px solid rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      padding: 0;
+      transition: background 0.15s;
+    }
+
+    .btn-camera-hero:hover { background: rgba(255, 255, 255, 0.3); }
+
+    /* url-import-status in hero state */
+    #homeInput .url-import-status {
+      color: rgba(255, 255, 255, 0.9);
+      text-align: center;
+      margin-top: -12px;
+    }
+
+    /* ── homeInput: compact state (has-entries) ────────────────────────────── */
+    #homeView.has-entries #homeInput {
+      min-height: 0;
+      background: var(--bg);
+      align-items: stretch;
+      justify-content: center;
+      padding: 12px 0;
+      border-radius: 0;
+      gap: 4px;
+    }
+
+    #homeView.has-entries #homeInput::before {
       display: none;
     }
 
-    #homeView.has-entries #urlImportCard {
-      padding: 8px 12px;
-      margin-top: 0 !important;
+    #homeView.has-entries #homeInput > * {
+      position: static;
     }
 
-    #homeView.has-entries #urlImportCard .card-label {
+    #homeView.has-entries .hero-headline {
       display: none;
+    }
+
+    #homeView.has-entries #heroSearchRow {
+      max-width: none;
+      height: 56px;
+    }
+
+    #homeView.has-entries #heroSearchRow input[type="url"] {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      box-shadow: none;
+      color: var(--text);
+    }
+
+    #homeView.has-entries #heroSearchRow input[type="url"]:focus {
+      border-color: var(--accent);
+      box-shadow: none;
+    }
+
+    #homeView.has-entries #heroSearchRow #btnAnalyzeUrl {
+      border-radius: 8px;
+      padding: 10px 16px;
+    }
+
+    #homeView.has-entries .btn-camera-hero {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      width: 42px;
+      height: 42px;
+    }
+
+    #homeView.has-entries .btn-camera-hero:hover {
+      background: var(--border);
+    }
+
+    #homeView.has-entries #homeInput .url-import-status {
+      color: var(--text-muted);
+      text-align: left;
+      margin-top: 0;
     }
