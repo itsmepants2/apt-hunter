@@ -12,10 +12,41 @@ export async function loadEntries() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
     if (error) throw error;
-    return data ?? [];
+    return (data ?? []).map(normalizeEntry);
   } catch {
     return [];
   }
+}
+
+export function normalizeEntry(row) {
+  return {
+    id: row.id,
+    date: row.created_at,
+    url: row.url || null,
+    address: row.address || null,
+    neighborhood: row.neighborhood || null,
+    priceMxn: row.price_mxn || null,
+    sizeSqm: row.size_m2 || null,
+    bedrooms: row.bedrooms || null,
+    bathrooms: row.bathrooms || null,
+    contactedNumber: row.contact_phone || null,
+    contactedDisplay: row.contact_phone || null,
+    notes: row.notes || null,
+    status: row.status || 'spotted',
+    starred: row.starred || false,
+    headline: row.headline || null,
+    score: row.score || null,
+    scoreBreakdown: row.score_breakdown || null,
+    amenities: row.amenities || null,
+    extraPhotos: row.photos || [],
+    thumbnail: row.photos?.[0] || null,
+    raw: row.raw_extraction || null,
+    allPhones: row.contact_phone ? [row.contact_phone] : [],
+    whatsappMessage: '',
+    type: null,
+    extras: null,
+    parking: null,
+  };
 }
 
 export async function saveEntry(entry) {
