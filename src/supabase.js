@@ -1,5 +1,5 @@
 // src/supabase.js — Supabase client initialisation and credential helpers
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/module/index.js';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { store } from './archive.js';
 
 export const SUPABASE_URL = 'https://qhfoftkcyfnyahclkxis.supabase.co';
