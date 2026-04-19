@@ -19,6 +19,7 @@ export async function loadEntries() {
 }
 
 export async function saveEntry(entry) {
+  console.log('[db] saveEntry called', entry?.id);
   try {
     const supabase = getSupabaseClient();
     const { data, error } = await supabase
@@ -28,7 +29,8 @@ export async function saveEntry(entry) {
       .single();
     if (error) throw error;
     return data;
-  } catch {
+  } catch (err) {
+    console.error('[db] saveEntry failed', err);
     return null;
   }
 }
@@ -41,7 +43,7 @@ export async function deleteEntry(id) {
       .delete()
       .eq('id', id);
     if (error) throw error;
-  } catch {
-    // fire-and-forget — suppress errors
+  } catch (err) {
+    console.error('[db] deleteEntry failed', err);
   }
 }
