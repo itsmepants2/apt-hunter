@@ -6,6 +6,7 @@
 import { gistPull, getGhToken, getGistId } from './sync.js';
 import { showToast, renderArchive, renderScorecard, renderGallery } from './ui.js';
 import { loadEntries, saveEntry, deleteEntry } from './db.js';
+import { getSession } from './auth.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────
 export const STATUSES = [
@@ -23,9 +24,22 @@ export const store = {
 // ── Archive: filter state ─────────────────────────────────────────────────
 export const archiveFilter = { sort: '', colonia: '', bedrooms: '', tipo: '' };
 
-// ── Supabase entries cache (populated in background on module load) ────────
+// ── Supabase entries cache (populated in background after auth confirmed) ────
 let _dbCache = null;
-loadEntries().then(rows => { if (rows.length > 0) _dbCache = rows; }).catch(() => {});
+(async () => {
+  const session = await getSession();
+  if (!session) return;
+  const rows = await loadEntries();
+  if (rows.length > 0) {
+    _dbCache = rows;
+    renderArchive();
+    const archiveList = document.getElementById('archiveList');
+    const homeView    = document.getElementById('homeView');
+    if (archiveList && homeView) {
+      homeView.classList.toggle('has-entries', archiveList.children.length > 0);
+    }
+  }
+})();
 
 // ── Exchange rate: MXN → USD ──────────────────────────────────────────────
 export let mxnToUsdRate = null;
