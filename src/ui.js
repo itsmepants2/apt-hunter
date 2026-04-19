@@ -17,6 +17,7 @@ import { saveToArchive, switchTab } from './app.js';
 import { gistPush } from './sync.js';
 
 import { scoreEntry } from './scoring.js';
+import { saveEntry } from './db.js';
 
 // ── Scoring constants ──────────────────────────────────────────────────────
 const CRITERION_LABELS = {
@@ -288,6 +289,7 @@ export function renderUrlPreview({ url, extracted, photos }) {
     const archive = loadArchive();
     archive.unshift(entry);
     store.set('apt_hunter_archive', JSON.stringify(archive));
+    saveEntry(entry);
     gistPush();
     renderScorecard();
     showToast('💾 Guardado en archivo ✓');
