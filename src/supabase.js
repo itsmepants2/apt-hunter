@@ -8,8 +8,12 @@ export const SUPABASE_KEY = 'sb_publishable_d62Ed34i4oQjlsfmhZQ7Kg_ecXR4wuM';
 export function getSupabaseUrl() { return store.get('apt_hunter_supabase_url') || ''; }
 export function getSupabaseKey() { return store.get('apt_hunter_supabase_key') || ''; }
 
+let _client = null;
+
 export function getSupabaseClient() {
+  if (_client) return _client;
   const url = getSupabaseUrl() || SUPABASE_URL;
   const key = getSupabaseKey() || SUPABASE_KEY;
-  return createClient(url, key);
+  _client = createClient(url, key);
+  return _client;
 }
