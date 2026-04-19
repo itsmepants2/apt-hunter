@@ -75,31 +75,14 @@ export function saveToArchive(waNumber, displayNumber) {
 
 // ── Tab switching ──────────────────────────────────────────────────────────
 export function switchTab(name) {
-  const scanView    = document.getElementById('scanView');
-  const archiveView = document.getElementById('archiveView');
-  const topPanel    = document.getElementById('topPanel');
-
-  // Sync active state on both tab bars
   document.querySelectorAll('[data-tab]').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === name);
   });
 
-  // Show/hide tab content views
-  const perfilView  = document.getElementById('perfilView');
-  scanView.style.display    = name === 'scan'    ? '' : 'none';
-  archiveView.style.display = name === 'archive' ? '' : 'none';
-  perfilView.style.display  = name === 'perfil'  ? '' : 'none';
+  const perfilView = document.getElementById('perfilView');
+  perfilView.style.display = name === 'perfil' ? '' : 'none';
 
-  // Top panel: always visible on desktop (CSS handles it);
-  // on mobile it shows only when scan tab is active
-  topPanel.classList.toggle('tab-active', name === 'scan');
-
-  if (name === 'archive') {
-    renderArchive();
-    gistPull();
-  }
   if (name === 'perfil') renderPerfil();
-
   renderScorecard();
 }
 
@@ -198,14 +181,12 @@ function renderPerfil() {
   // ── Auth gate ──
   const authView   = document.getElementById('authView');
   const appHeader  = document.getElementById('appHeader');
-  const topPanel   = document.getElementById('topPanel');
   const tabContent = document.getElementById('tabContent');
   const tabsBottom = document.getElementById('tabsBottom');
 
   function showAuth() {
-    authView.style.display  = 'flex';
-    appHeader.style.display = 'none';
-    topPanel.style.display  = 'none';
+    authView.style.display   = 'flex';
+    appHeader.style.display  = 'none';
     tabContent.style.display = 'none';
     tabsBottom.style.display = 'none';
   }
@@ -213,7 +194,6 @@ function renderPerfil() {
   function hideAuth() {
     authView.style.display   = 'none';
     appHeader.style.display  = '';
-    topPanel.style.display   = '';
     tabContent.style.display = '';
     tabsBottom.style.display = '';
   }
@@ -462,6 +442,8 @@ function renderPerfil() {
   if (_galleryParam) initGalleryMode(_galleryParam);
 
   renderScorecard();
+  renderArchive();
+  gistPull();
 
   // ── PWA Service Worker ──
   if ('serviceWorker' in navigator) {

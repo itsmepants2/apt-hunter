@@ -56,64 +56,64 @@
   <header id="appHeader">
     <div id="headerBrand"><h1>🏠 Apt Hunter</h1><p class="subtitle">Fotografía un letrero y genera tu mensaje de WhatsApp al instante.</p></div>
     <div id="headerRight">
-      <nav class="tabs-top"><button class="view-tab active" id="tabScan" data-tab="scan">📷 Escanear</button><button class="view-tab" id="tabArchive" data-tab="archive">🗂 Archivo</button><button class="view-tab" id="tabPerfil" data-tab="perfil">🎯 Perfil</button></nav>
+      <button class="view-tab" id="tabPerfil" data-tab="perfil">🎯 Perfil</button>
       <button class="btn-settings" id="btnSettings" title="Ajustes">⚙️</button>
     </div>
   </header>
-  <div id="topPanel" class="tab-active">
-    <div id="uploadCol">
-      <div class="card">
-        <div class="card-label">Foto del letrero</div>
-        <label class="capture-label" id="captureLabel"><input type="file" id="fileUpload" accept="image/*">
-          <div class="capture-zone" id="captureZone">
-            <div class="capture-icon">📷</div><div class="capture-hint">Toca para subir foto</div>
-            <div class="capture-overlay"><div class="capture-icon">🔄</div><div style="color:#fff;font-size:0.85rem;">Cambiar foto</div></div>
-          </div>
-        </label>
-        <div class="btn-row" style="margin-top:10px;">
-          <label class="btn btn-ghost" style="cursor:pointer;"><input type="file" id="fileCamera" accept="image/*" capture="environment" style="display:none;">📷 Cámara</label>
-          <button class="btn btn-ghost" id="btnClear" style="display:none;">✕ Limpiar</button>
-        </div>
-      </div>
-      <button class="btn btn-analyze" id="btnAnalyze" disabled>Analizar letrero</button>
-      <div class="error-box" id="errorBox"></div>
-      <div class="card" style="margin-top:12px;">
-        <div class="card-label">O pega el URL del anuncio</div>
-        <div class="url-import-row"><input type="url" id="urlImportInput" placeholder="https://inmuebles24.com/…"><button class="btn btn-ghost" id="btnAnalyzeUrl">Analizar</button></div>
-        <div class="url-import-status" id="urlImportStatus"></div>
-      </div>
-    </div>
-    <div id="scorecard"><button class="scorecard-toggle" id="scorecardToggle">Ver resumen ▼</button><div class="scorecard-body" id="scorecardBody"></div></div>
-  </div>
   <div id="tabContent">
-    <div id="scanView">
-      <div id="urlPreviewCard" style="display:none;"></div>
-      <div class="results" id="results">
-        <div class="card"><div class="card-label">Información extraída</div><div class="listing-grid" id="listingGrid"></div></div>
-        <div class="card"><div class="card-label">Mensaje generado</div><div class="message-box" id="messageBox"></div></div>
-        <div class="card"><div class="card-label">Abrir en WhatsApp</div><div class="multi-contact" id="contactLinks"></div></div>
-      </div>
-      <div class="card" id="bulkCard" style="margin-top:16px;">
-        <div class="card-label">Carga masiva</div>
-        <label class="bulk-drop" id="bulkDrop"><input type="file" id="bulkInput" accept="image/*" multiple>
-          <div style="font-size:1.8rem;">🖼️</div>
-          <div class="bulk-drop-hint">Toca para seleccionar varias fotos<br>o arrastra aquí</div>
-          <div class="bulk-file-count" id="bulkCount" style="display:none;"></div>
-        </label>
-        <button class="btn btn-bulk-run" id="btnBulkRun" disabled>Analizar y guardar todas</button>
-        <div class="bulk-progress-wrap" id="bulkProgressWrap">
-          <div class="bulk-progress-bar-track"><div class="bulk-progress-bar-fill" id="bulkProgressFill"></div></div>
-          <div class="bulk-status" id="bulkStatus"></div><div class="bulk-file-list" id="bulkFileList"></div>
+    <div id="homeView">
+      <div id="homeInput">
+        <div id="uploadCol">
+          <div class="card">
+            <div class="card-label">Foto del letrero</div>
+            <label class="capture-label" id="captureLabel"><input type="file" id="fileUpload" accept="image/*">
+              <div class="capture-zone" id="captureZone">
+                <div class="capture-icon">📷</div><div class="capture-hint">Toca para subir foto</div>
+                <div class="capture-overlay"><div class="capture-icon">🔄</div><div style="color:#fff;font-size:0.85rem;">Cambiar foto</div></div>
+              </div>
+            </label>
+            <div class="btn-row" style="margin-top:10px;">
+              <label class="btn btn-ghost" style="cursor:pointer;"><input type="file" id="fileCamera" accept="image/*" capture="environment" style="display:none;">📷 Cámara</label>
+              <button class="btn btn-ghost" id="btnClear" style="display:none;">✕ Limpiar</button>
+            </div>
+          </div>
+          <button class="btn btn-analyze" id="btnAnalyze" disabled>Analizar letrero</button>
+          <div class="error-box" id="errorBox"></div>
+          <div class="card" style="margin-top:12px;">
+            <div class="card-label">O pega el URL del anuncio</div>
+            <div class="url-import-row"><input type="url" id="urlImportInput" placeholder="https://inmuebles24.com/…"><button class="btn btn-ghost" id="btnAnalyzeUrl">Analizar</button></div>
+            <div class="url-import-status" id="urlImportStatus"></div>
+          </div>
+        </div>
+        <div id="scorecard"><button class="scorecard-toggle" id="scorecardToggle">Ver resumen ▼</button><div class="scorecard-body" id="scorecardBody"></div></div>
+        <div id="urlPreviewCard" style="display:none;"></div>
+        <div class="results" id="results">
+          <div class="card"><div class="card-label">Información extraída</div><div class="listing-grid" id="listingGrid"></div></div>
+          <div class="card"><div class="card-label">Mensaje generado</div><div class="message-box" id="messageBox"></div></div>
+          <div class="card"><div class="card-label">Abrir en WhatsApp</div><div class="multi-contact" id="contactLinks"></div></div>
+        </div>
+        <div class="card" id="bulkCard" style="margin-top:16px;">
+          <div class="card-label">Carga masiva</div>
+          <label class="bulk-drop" id="bulkDrop"><input type="file" id="bulkInput" accept="image/*" multiple>
+            <div style="font-size:1.8rem;">🖼️</div>
+            <div class="bulk-drop-hint">Toca para seleccionar varias fotos<br>o arrastra aquí</div>
+            <div class="bulk-file-count" id="bulkCount" style="display:none;"></div>
+          </label>
+          <button class="btn btn-bulk-run" id="btnBulkRun" disabled>Analizar y guardar todas</button>
+          <div class="bulk-progress-wrap" id="bulkProgressWrap">
+            <div class="bulk-progress-bar-track"><div class="bulk-progress-bar-fill" id="bulkProgressFill"></div></div>
+            <div class="bulk-status" id="bulkStatus"></div><div class="bulk-file-list" id="bulkFileList"></div>
+          </div>
         </div>
       </div>
-    </div>
-    <div id="archiveView" style="display:none;">
-      <div class="archive-header">
-        <span class="archive-title" id="archiveTitle">Archivo</span>
-        <div style="display:flex;gap:6px;"><button class="btn-csv" id="btnCsv">⬇ CSV</button></div>
+      <div id="homeArchive">
+        <div class="archive-header">
+          <span class="archive-title" id="archiveTitle">Archivo</span>
+          <div style="display:flex;gap:6px;"><button class="btn-csv" id="btnCsv">⬇ CSV</button></div>
+        </div>
+        <div id="archiveFilters"></div>
+        <div id="archiveList"></div>
       </div>
-      <div id="archiveFilters"></div>
-      <div id="archiveList"></div>
     </div>
     <div id="galleryView" style="display:none;"></div>
     <div id="perfilView" style="display:none;">
@@ -178,8 +178,6 @@
   </div>
 </aside>
 <nav class="tabs-bottom" id="tabsBottom">
-  <button class="bottom-tab active" data-tab="scan"><span class="tab-icon">📷</span>Escanear</button>
-  <button class="bottom-tab" data-tab="archive"><span class="tab-icon">🗂</span>Archivo</button>
   <button class="bottom-tab" data-tab="perfil"><span class="tab-icon">🎯</span>Perfil</button>
 </nav>
 <div class="toast" id="toast"></div>
