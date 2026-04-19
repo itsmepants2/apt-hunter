@@ -5,6 +5,7 @@
 // exported function is invoked.
 import { gistPush, gistPull, getGhToken, getGistId } from './sync.js';
 import { showToast, renderArchive, renderScorecard, renderGallery } from './ui.js';
+import { loadEntries } from './db.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────
 export const STATUSES = [
@@ -22,6 +23,10 @@ export const store = {
 // ── Archive: filter state ─────────────────────────────────────────────────
 export const archiveFilter = { sort: '', colonia: '', bedrooms: '', tipo: '' };
 
+// ── Supabase entries cache (populated in background on module load) ────────
+let _dbCache = null;
+loadEntries().then(rows => { if (rows.length > 0) _dbCache = rows; }).catch(() => {});
+
 // ── Exchange rate: MXN → USD ──────────────────────────────────────────────
 export let mxnToUsdRate = null;
 fetch('https://apt-hunter-proxy.stevebryant.workers.dev/fx')
@@ -34,6 +39,7 @@ fetch('https://apt-hunter-proxy.stevebryant.workers.dev/fx')
 
 // ── Archive: persistence ──────────────────────────────────────────────────
 export function loadArchive() {
+  if (_dbCache !== null) return _dbCache;
   try { return JSON.parse(store.get('apt_hunter_archive') || '[]'); }
   catch { return []; }
 }
