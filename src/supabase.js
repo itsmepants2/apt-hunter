@@ -9,8 +9,7 @@ export function getSupabaseUrl() { return store.get('apt_hunter_supabase_url') |
 export function getSupabaseKey() { return store.get('apt_hunter_supabase_key') || ''; }
 
 export function getSupabaseClient() {
-  const url = getSupabaseUrl();
-  const key = getSupabaseKey();
-  if (!url || !key) return null;
+  const url = getSupabaseUrl() || SUPABASE_URL;
+  const key = getSupabaseKey() || SUPABASE_KEY;
   return createClient(url, key);
 }

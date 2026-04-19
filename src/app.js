@@ -29,6 +29,7 @@ import {
 } from './analyze.js';
 
 import { exportCSV } from './csv.js';
+import { getSession, onAuthStateChange, signInWithGoogle } from './auth.js';
 
 import {
   renderResults,
@@ -193,7 +194,40 @@ function renderPerfil() {
 }
 
 // ── Init (runs after DOM ready — module scripts are deferred by default) ────
-(function init() {
+(async function init() {
+  // ── Auth gate ──
+  const authView   = document.getElementById('authView');
+  const appHeader  = document.getElementById('appHeader');
+  const topPanel   = document.getElementById('topPanel');
+  const tabContent = document.getElementById('tabContent');
+  const tabsBottom = document.getElementById('tabsBottom');
+
+  function showAuth() {
+    authView.style.display  = 'flex';
+    appHeader.style.display = 'none';
+    topPanel.style.display  = 'none';
+    tabContent.style.display = 'none';
+    tabsBottom.style.display = 'none';
+  }
+
+  function hideAuth() {
+    authView.style.display   = 'none';
+    appHeader.style.display  = '';
+    topPanel.style.display   = '';
+    tabContent.style.display = '';
+    tabsBottom.style.display = '';
+  }
+
+  document.getElementById('btnGoogleSignIn').addEventListener('click', signInWithGoogle);
+
+  onAuthStateChange((_event, session) => {
+    if (session) hideAuth();
+    else showAuth();
+  });
+
+  const session = await getSession();
+  if (!session) showAuth();
+
   // ── Element refs ──
   const captureZone       = document.getElementById('captureZone');
   const btnClear          = document.getElementById('btnClear');
