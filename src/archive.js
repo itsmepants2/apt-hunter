@@ -3,7 +3,7 @@
 // because every cross-module call occurs inside a function body — never at
 // module evaluation time — so both modules are fully initialised before any
 // exported function is invoked.
-import { gistPush, gistPull, getGhToken, getGistId } from './sync.js';
+import { gistPull, getGhToken, getGistId } from './sync.js';
 import { showToast, renderArchive, renderScorecard, renderGallery } from './ui.js';
 import { loadEntries, saveEntry, deleteEntry } from './db.js';
 
@@ -64,7 +64,6 @@ export function saveToArchiveDirect(result, thumbnail) {
   archive.unshift(entry);
   store.set('apt_hunter_archive', JSON.stringify(archive));
   saveEntry(entry);
-  gistPush();
   renderScorecard();
   return true;
 }
@@ -76,7 +75,6 @@ export function saveArchiveField(id, key, value) {
     archive[idx][key] = value;
     store.set('apt_hunter_archive', JSON.stringify(archive));
     saveEntry(archive[idx]);
-    gistPush();
   }
 }
 
@@ -88,7 +86,6 @@ export function saveArchivePhotoAdd(id, thumbDataUrl) {
     archive[idx].extraPhotos.push(thumbDataUrl);
     store.set('apt_hunter_archive', JSON.stringify(archive));
     saveEntry(archive[idx]);
-    gistPush();
   }
 }
 
@@ -96,7 +93,6 @@ export function deleteArchiveEntry(id) {
   const archive = loadArchive().filter(e => e.id !== id);
   store.set('apt_hunter_archive', JSON.stringify(archive));
   deleteEntry(id);
-  gistPush();
   renderArchive();
   renderScorecard();
 }

@@ -50,7 +50,6 @@ export function normalizeEntry(row) {
 }
 
 export async function saveEntry(entry) {
-  console.log('[db] saveEntry called', entry?.id);
   try {
     const supabase = getSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -82,8 +81,7 @@ export async function saveEntry(entry) {
       .single();
     if (error) throw error;
     return data;
-  } catch (err) {
-    console.error('[db] saveEntry failed', err?.message, err?.details, err);
+  } catch {
     return null;
   }
 }
@@ -96,7 +94,7 @@ export async function deleteEntry(id) {
       .delete()
       .eq('id', id);
     if (error) throw error;
-  } catch (err) {
-    console.error('[db] deleteEntry failed', err);
+  } catch {
+    // silent
   }
 }

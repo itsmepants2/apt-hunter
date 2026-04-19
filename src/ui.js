@@ -14,7 +14,6 @@ import {
 
 import { saveToArchive, switchTab } from './app.js';
 
-import { gistPush } from './sync.js';
 
 import { scoreEntry } from './scoring.js';
 import { saveEntry } from './db.js';
@@ -290,7 +289,6 @@ export function renderUrlPreview({ url, extracted, photos }) {
     archive.unshift(entry);
     store.set('apt_hunter_archive', JSON.stringify(archive));
     saveEntry(entry);
-    gistPush();
     renderScorecard();
     showToast('💾 Guardado en archivo ✓');
     clearUrlPreview();
@@ -802,7 +800,6 @@ export function deleteArchivePhoto(entryId, photoSrc, onSuccess) {
     e.extraPhotos = (e.extraPhotos || []).filter(s => s !== photoSrc);
   }
   store.set('apt_hunter_archive', JSON.stringify(archive));
-  gistPush();
   if (onSuccess) onSuccess();
 }
 
