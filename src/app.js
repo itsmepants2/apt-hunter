@@ -197,17 +197,11 @@ function renderPerfil() {
   const tabsBottom = document.getElementById('tabsBottom');
 
   function showAuth() {
-    authView.style.display   = 'flex';
-    appHeader.style.display  = 'none';
-    tabContent.style.display = 'none';
-    tabsBottom.style.display = 'none';
+    authView.style.display = 'flex';
   }
 
   function hideAuth() {
-    authView.style.display   = 'none';
-    appHeader.style.display  = '';
-    tabContent.style.display = '';
-    tabsBottom.style.display = '';
+    authView.style.display = 'none';
   }
 
   document.getElementById('btnGoogleSignIn').addEventListener('click', signInWithGoogle);
@@ -222,13 +216,10 @@ function renderPerfil() {
         updateHasEntries();
         appShell.style.visibility = 'visible';
       }
-    } else {
-      showAuth();
     }
   });
 
-  const session = await getSession();
-  if (!session) showAuth();
+  await getSession();
 
   // ── Element refs ──
   const captureZone       = document.getElementById('captureZone');
