@@ -80,7 +80,8 @@ export function updateHasEntries() {
   const archiveList = document.getElementById('archiveList');
   const homeView = document.getElementById('homeView');
   if (archiveList && homeView) {
-    homeView.classList.toggle('has-entries', archiveList.children.length > 0);
+    const cardCount = archiveList.querySelectorAll('.archive-card').length;
+    homeView.classList.toggle('has-entries', cardCount > 0);
   }
 }
 
