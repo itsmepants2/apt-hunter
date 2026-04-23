@@ -1723,6 +1723,14 @@
 
       #appShell { padding: 16px 16px 0; }
 
+      /* Hero: break out of #appShell's 16px side padding */
+      #homeInput {
+        margin-left: -16px;
+        margin-right: -16px;
+        width: calc(100% + 32px);
+        padding: 40px 24px 36px;
+      }
+
       /* Desktop top tabs: hidden on mobile */
       #appHeader .tabs-top { display: none; }
 
@@ -1747,6 +1755,13 @@
       body { padding: 0; }
 
       #appShell { padding: 24px 24px 0; }
+
+      /* Hero: break out of #appShell's 24px side padding */
+      #homeInput {
+        margin-left: -24px;
+        margin-right: -24px;
+        width: calc(100% + 48px);
+      }
 
       #appHeader { align-items: center; margin-bottom: 24px; }
 
@@ -1927,15 +1942,15 @@
     /* ── homeInput: hero / zero state ─────────────────────────────────────── */
     #homeInput {
       position: relative;
-      min-height: 420px;
+      min-height: 480px;
       background: url('/apt-hunter/assets/hero.jpg') center / cover no-repeat;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      padding: 40px 24px;
-      border-radius: var(--radius);
+      align-items: flex-start;
+      justify-content: flex-end;
+      gap: 16px;
+      padding: 48px 40px 40px;
+      border-radius: 0;
       overflow: hidden;
     }
 
@@ -1958,11 +1973,11 @@
     /* Hero headline */
     .hero-headline {
       color: #fff;
-      font-size: 2rem;
+      font-size: 3rem;
       font-weight: 700;
-      text-align: center;
+      text-align: left;
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
-      line-height: 1.2;
+      line-height: 1.15;
       margin: 0;
     }
 
@@ -1972,7 +1987,7 @@
       align-items: center;
       gap: 8px;
       width: 100%;
-      max-width: 500px;
+      max-width: 560px;
     }
 
     #heroSearchRow input[type="url"] {
@@ -2006,8 +2021,8 @@
 
     /* Camera icon button */
     .btn-camera-hero {
-      background: rgba(255, 255, 255, 0.18);
-      border: 1.5px solid rgba(255, 255, 255, 0.5);
+      background: #fff;
+      border: none;
       border-radius: 50%;
       width: 44px;
       height: 44px;
@@ -2021,13 +2036,13 @@
       transition: background 0.15s;
     }
 
-    .btn-camera-hero:hover { background: rgba(255, 255, 255, 0.3); }
+    .btn-camera-hero:hover { background: #f0f0f0; }
 
     /* url-import-status in hero state */
     #homeInput .url-import-status {
       color: rgba(255, 255, 255, 0.9);
-      text-align: center;
-      margin-top: -12px;
+      text-align: left;
+      margin-top: -8px;
     }
 
     /* ── homeInput: compact state (has-entries) ────────────────────────────── */
