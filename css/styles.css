@@ -1928,7 +1928,7 @@
     #homeInput {
       position: relative;
       min-height: 420px;
-      background: url('../assets/hero.jpg') center / cover no-repeat;
+      background: url('/apt-hunter/assets/hero.jpg') center / cover no-repeat;
       display: flex;
       flex-direction: column;
       align-items: center;
