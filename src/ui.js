@@ -547,6 +547,10 @@ export function renderScorecard() {
   const archive = loadArchive();
   const total = archive.length;
 
+  document.getElementById('scorecard').style.display = total === 0 ? 'none' : '';
+  document.getElementById('btnCsv').style.display    = total === 0 ? 'none' : '';
+  if (total === 0) { scorecardBody.innerHTML = ''; return; }
+
   // Average priceMxn
   const prices = archive
     .map(e => parseFloat(String(e.priceMxn || '').replace(/[^0-9.]/g, '')))
