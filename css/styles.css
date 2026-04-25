@@ -1,16 +1,22 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #F5F0E8;
-      --surface: #FDFAF5;
-      --surface2: #EDE8DC;
-      --accent: #2C3A4A;
+      /* Bugambilia palette: Concha bg, Bugambilia brand, Coral hover, Salvia success, Mole text */
+      --bg: #FBF5F4;
+      --surface: #FFFFFF;
+      --surface2: #FBF5F4;
+      --accent: #D63B6B;
+      --accent-hover: #F08F69;
+      --success: #87A878;
       --green: #25d366;
       --green-dark: #1da851;
-      --text: #2C2A26;
-      --text-muted: #8A8070;
-      --border: #D5CFC2;
+      --text: #2C1820;
+      --text-muted: rgba(44, 24, 32, 0.60);
+      --border: rgba(44, 24, 32, 0.12);
+      --border-hover: rgba(44, 24, 32, 0.18);
       --error: #C0392B;
+      --error-bg: rgba(192, 57, 43, 0.10);
+      --error-border: rgba(192, 57, 43, 0.30);
       --radius: 12px;
     }
 
@@ -91,6 +97,7 @@
       background: var(--accent);
       color: #fff;
     }
+    .btn-primary:hover { background: var(--accent-hover); color: var(--text); }
 
     .btn-ghost {
       background: var(--surface2);
@@ -163,6 +170,7 @@
       padding: 13px;
       font-size: 1rem;
     }
+    .btn-analyze:hover { background: var(--accent-hover); color: var(--text); }
 
     /* Spinner */
     .spinner {
@@ -374,8 +382,8 @@
     .cc-confirm-btn:active { transform: scale(0.97); }
 
     .error-box {
-      background: rgba(192,57,43,0.08);
-      border: 1px solid rgba(192,57,43,0.25);
+      background: var(--error-bg);
+      border: 1px solid var(--error-border);
       border-radius: 8px;
       color: var(--error);
       padding: 12px;
@@ -550,7 +558,7 @@
       transition: opacity 0.15s, background 0.15s;
       z-index: 10;
     }
-    .photo-delete-btn:hover { background: rgba(180, 30, 30, 0.85); }
+    .photo-delete-btn:hover { background: var(--error); }
 
     .score-badge {
       position: absolute;
@@ -565,9 +573,9 @@
       pointer-events: none;
       letter-spacing: 0.02em;
     }
-    .score-badge.score-green { background: #4caf50; }
+    .score-badge.score-green { background: var(--success); }
     .score-badge.score-amber { background: #ff9800; }
-    .score-badge.score-red   { background: #f44336; }
+    .score-badge.score-red   { background: var(--error); }
 
     /* ── Match breakdown section ─────────────────────────────────────────── */
     .score-breakdown {
@@ -632,7 +640,7 @@
     }
 
     .breakdown-must-miss td {
-      background: rgba(239, 68, 68, 0.08);
+      background: var(--error-bg);
     }
 
     /* ── Amenity pills ───────────────────────────────────────────────────────── */
@@ -917,7 +925,8 @@
       -moz-appearance: none;
       appearance: none;
       background-color: var(--surface);
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A8070' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      /* NB: data URL can't reference var(--text-muted); chevron stroke is hardcoded to flattened Mole-60% on Concha (#A98A92). Manual update required if --text-muted changes. */
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23A98A92' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 12px center;
       border: 1px solid var(--border);
@@ -932,9 +941,9 @@
     }
     .filter-select:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(44,58,74,0.08);
+      box-shadow: 0 0 0 3px rgba(214, 59, 107, 0.12);
     }
-    .filter-select:hover { border-color: #B8B2A6; }
+    .filter-select:hover { border-color: var(--border-hover); }
     .filter-clear {
       flex: 0 0 auto;
       background: none;
@@ -1032,7 +1041,7 @@
 
     .btn-delete {
       background: transparent;
-      border: 1px solid rgba(192,57,43,0.3);
+      border: 1px solid var(--error-border);
       border-radius: 6px;
       color: var(--error);
       font-size: 0.8rem;
@@ -1042,7 +1051,7 @@
       transition: background 0.15s;
     }
 
-    .btn-delete:hover { background: rgba(192,57,43,0.1); }
+    .btn-delete:hover { background: var(--error-bg); }
 
     /* ── Bulk upload ─────────────────────────────── */
     .bulk-drop {
@@ -1080,6 +1089,7 @@
       font-size: 0.95rem;
       margin-top: 10px;
     }
+    .btn-bulk-run:hover { background: var(--accent-hover); color: var(--text); }
 
     .bulk-progress-wrap { margin-top: 12px; display: none; }
 
@@ -1138,10 +1148,10 @@
 
     .status-step {
       flex: 1;
-      border: 1px solid var(--border);
+      border: 1px solid rgba(44, 24, 32, 0.20);
       border-radius: 6px;
-      background: var(--surface2);
-      color: var(--text-muted);
+      background: transparent;
+      color: rgba(44, 24, 32, 0.20);
       font-size: 0.7rem;
       font-weight: 600;
       padding: 5px 2px;
@@ -1155,15 +1165,27 @@
     }
 
     .status-step.past {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: var(--surface2);
+      border-color: var(--text-muted);
+      color: var(--text-muted);
+      background: transparent;
     }
 
+    /* Per-step active colors: Contactado=Mole-60%, Visitado=Bugambilia, Decidido=Salvia */
     .status-step.active {
+      color: #fff;
+    }
+    .status-step:nth-child(1).active {
+      background: var(--text-muted);
+      border-color: var(--text-muted);
+    }
+    .status-step:nth-child(2).active {
       background: var(--accent);
       border-color: var(--accent);
-      color: #fff;
+    }
+    .status-step:nth-child(3).active {
+      background: var(--success);
+      border-color: var(--success);
+      color: var(--text); /* Mole on Salvia for AA contrast (white-on-Salvia fails) */
     }
 
     /* ── Add-photo label (bottom row of card) ──────────────────────────────── */
@@ -1305,6 +1327,7 @@
       flex-shrink: 0;
       transition: opacity 0.15s;
     }
+    .btn-extract:hover:not(:disabled) { background: var(--accent-hover); color: var(--text); }
     .btn-extract:disabled { opacity: 0.45; cursor: not-allowed; }
 
     .url-extract-status {
@@ -1520,7 +1543,7 @@
     .settings-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(44,42,38,0.35);
+      background: rgba(44, 24, 32, 0.35);
       z-index: 200;
       opacity: 0;
       pointer-events: none;
@@ -1544,7 +1567,7 @@
       flex-direction: column;
       transform: translateX(100%);
       transition: transform 0.25s ease;
-      box-shadow: -4px 0 24px rgba(44,42,38,0.12);
+      box-shadow: -4px 0 24px rgba(44, 24, 32, 0.12);
     }
     .settings-panel.open { transform: translateX(0); }
 
@@ -1921,6 +1944,7 @@
       margin-bottom: 16px;
       touch-action: manipulation;
     }
+    .btn-save-perfil:hover { background: var(--accent-hover); color: var(--text); }
     .btn-save-perfil:active { opacity: 0.85; }
 
     /* ── Home view layout ──────────────────────────────────────────────────── */
@@ -2027,7 +2051,7 @@
       flex-shrink: 0;
     }
 
-    #heroSearchRow #btnAnalyzeUrl:hover { opacity: 0.88; }
+    #heroSearchRow #btnAnalyzeUrl:hover { background: var(--accent-hover); color: var(--text); opacity: 1; }
 
     /* Camera icon button */
     .btn-camera-hero {

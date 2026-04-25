@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#F5F0E8">
+  <meta name="theme-color" content="#FBF5F4">
   <title>Mis Niditos</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/styles.css">
@@ -16,23 +16,23 @@
       gap: 28px;
       min-height: 100vh;
       padding: 32px 24px;
-      background: #F5F0E8;
+      background: var(--bg);
       text-align: center;
     }
     #authView .auth-logo { font-size: 3.5rem; }
-    #authView h2 { margin: 0; color: #2C3A4A; font-size: 1.7rem; font-weight: 700; }
-    #authView p  { margin: 0; color: #6B7280; font-size: 0.95rem; }
+    #authView h2 { margin: 0; color: var(--text); font-size: 1.7rem; font-weight: 700; }
+    #authView p  { margin: 0; color: var(--text-muted); font-size: 0.95rem; }
     #btnGoogleSignIn {
       display: flex;
       align-items: center;
       gap: 10px;
       padding: 12px 28px;
       background: #fff;
-      border: 1.5px solid #D1C9B8;
+      border: 1.5px solid var(--border);
       border-radius: 10px;
       font-size: 1rem;
       font-weight: 600;
-      color: #2C3A4A;
+      color: var(--text);
       cursor: pointer;
       box-shadow: 0 1px 4px rgba(0,0,0,0.07);
       transition: box-shadow 0.15s;
