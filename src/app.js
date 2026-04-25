@@ -30,7 +30,7 @@ import {
 } from './analyze.js';
 
 import { exportCSV } from './csv.js';
-import { getSession, onAuthStateChange, signInWithGoogle } from './auth.js';
+import { getSession, onAuthStateChange, signInWithGoogle, signOut } from './auth.js';
 
 import {
   renderResults,
@@ -207,7 +207,35 @@ function renderPerfil() {
 
   document.getElementById('btnGoogleSignIn').addEventListener('click', signInWithGoogle);
 
+  // ── Header auth button ──
+  const btnAuth = document.getElementById('btnAuth');
+  const btnAuthLabel = btnAuth.querySelector('.btn-auth-label');
+  const btnAuthIcon = btnAuth.querySelector('.btn-auth-icon');
+
+  function renderAuthButton(session) {
+    if (session) {
+      const email = session.user?.email || 'Cuenta';
+      btnAuth.classList.add('is-signed-in');
+      btnAuth.title = `${email} — toca para cerrar sesión`;
+      btnAuthLabel.textContent = email;
+      btnAuthIcon.textContent = (email[0] || '👤').toUpperCase();
+    } else {
+      btnAuth.classList.remove('is-signed-in');
+      btnAuth.title = 'Iniciar sesión con Google';
+      btnAuthLabel.textContent = 'Iniciar sesión';
+      btnAuthIcon.textContent = '👤';
+    }
+  }
+
+  let currentSession = null;
+  btnAuth.addEventListener('click', () => {
+    if (currentSession) signOut();
+    else signInWithGoogle();
+  });
+
   onAuthStateChange(async (_event, session) => {
+    currentSession = session;
+    renderAuthButton(session);
     if (session) {
       hideAuth();
       if (appShell.style.visibility !== 'visible') {
@@ -220,7 +248,8 @@ function renderPerfil() {
     }
   });
 
-  await getSession();
+  currentSession = await getSession();
+  renderAuthButton(currentSession);
 
   // ── Element refs ──
   const captureZone       = document.getElementById('captureZone');
