@@ -268,8 +268,9 @@ function renderPerfil() {
   }
 
   let currentSession = null;
-  btnAuth.addEventListener('click', async () => {
+  btnAuth.addEventListener('click', async (event) => {
     if (btnAuth.classList.contains('is-signed-in')) {
+      event.stopPropagation();
       if (authMenu.classList.contains('is-open')) closeAuthMenu();
       else openAuthMenu();
       return;
