@@ -15,7 +15,5 @@ export function getSupabaseClient() {
   const url = getSupabaseUrl() || SUPABASE_URL;
   const key = getSupabaseKey() || SUPABASE_KEY;
   _client = createClient(url, key);
-  // TODO(diagnostic): remove window.__supabase once sign-out is verified on live site
-  if (typeof window !== 'undefined') window.__supabase = _client;
   return _client;
 }

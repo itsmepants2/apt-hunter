@@ -227,18 +227,14 @@ function renderPerfil() {
     }
   }
 
-  btnAuth.addEventListener('click', async () => {
-    btnAuth.disabled = true;
-    try {
-      const session = await getSession();
-      if (session) await signOut();
-      else await signInWithGoogle();
-    } finally {
-      btnAuth.disabled = false;
-    }
+  let currentSession = null;
+  btnAuth.addEventListener('click', () => {
+    if (currentSession) signOut();
+    else signInWithGoogle();
   });
 
   onAuthStateChange(async (_event, session) => {
+    currentSession = session;
     renderAuthButton(session);
     if (session) {
       hideAuth();
@@ -252,7 +248,8 @@ function renderPerfil() {
     }
   });
 
-  renderAuthButton(await getSession());
+  currentSession = await getSession();
+  renderAuthButton(currentSession);
 
   // ── Element refs ──
   const captureZone       = document.getElementById('captureZone');
