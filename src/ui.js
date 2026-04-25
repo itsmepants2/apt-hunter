@@ -10,6 +10,7 @@ import {
   readFileAsDataUrl,
   mxnToUsdRate,
   archiveFilter,
+  initGalleryMode,
 } from './archive.js';
 
 import { saveToArchive, switchTab } from './app.js';
@@ -1362,7 +1363,6 @@ export function renderGallery(entry) {
     history.replaceState(null, '', location.pathname);
     galleryView.style.display = 'none';
     document.getElementById('appHeader').style.display = '';
-    document.getElementById('topPanel').style.display = '';
     document.getElementById('tabsBottom').style.display = '';
     switchTab('archive');
   });
@@ -1399,7 +1399,6 @@ export function renderGallery(entry) {
       history.replaceState(null, '', location.pathname);
       galleryView.style.display = 'none';
       document.getElementById('appHeader').style.display = '';
-      document.getElementById('topPanel').style.display = '';
       document.getElementById('tabsBottom').style.display = '';
       switchTab('archive');
     }
