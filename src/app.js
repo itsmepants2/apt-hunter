@@ -236,20 +236,21 @@ function renderPerfil() {
     }
   }
 
-  let outsideClickHandler = null;
-  let escapeHandler = null;
+  function handleOutsideClick(e) {
+    if (!authMenu.contains(e.target) && !btnAuth.contains(e.target)) closeAuthMenu();
+  }
+
+  function handleEscape(e) {
+    if (e.key === 'Escape') closeAuthMenu();
+  }
 
   function openAuthMenu() {
     if (authMenu.classList.contains('is-open')) return;
     authMenu.classList.add('is-open');
     authMenu.setAttribute('aria-hidden', 'false');
     btnAuth.setAttribute('aria-expanded', 'true');
-    outsideClickHandler = (e) => {
-      if (!authMenu.contains(e.target) && !btnAuth.contains(e.target)) closeAuthMenu();
-    };
-    escapeHandler = (e) => { if (e.key === 'Escape') closeAuthMenu(); };
-    setTimeout(() => document.addEventListener('click', outsideClickHandler), 0);
-    document.addEventListener('keydown', escapeHandler);
+    setTimeout(() => document.addEventListener('click', handleOutsideClick), 0);
+    document.addEventListener('keydown', handleEscape);
   }
 
   function closeAuthMenu() {
@@ -257,14 +258,8 @@ function renderPerfil() {
     authMenu.classList.remove('is-open');
     authMenu.setAttribute('aria-hidden', 'true');
     btnAuth.setAttribute('aria-expanded', 'false');
-    if (outsideClickHandler) {
-      document.removeEventListener('click', outsideClickHandler);
-      outsideClickHandler = null;
-    }
-    if (escapeHandler) {
-      document.removeEventListener('keydown', escapeHandler);
-      escapeHandler = null;
-    }
+    document.removeEventListener('click', handleOutsideClick);
+    document.removeEventListener('keydown', handleEscape);
   }
 
   let currentSession = null;
