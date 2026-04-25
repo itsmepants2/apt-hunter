@@ -228,9 +228,15 @@ function renderPerfil() {
   }
 
   let currentSession = null;
-  btnAuth.addEventListener('click', () => {
-    if (currentSession) signOut();
-    else signInWithGoogle();
+  btnAuth.addEventListener('click', async () => {
+    btnAuth.disabled = true;
+    try {
+      const session = await getSession();
+      if (session) await signOut();
+      else await signInWithGoogle();
+    } finally {
+      btnAuth.disabled = false;
+    }
   });
 
   onAuthStateChange(async (_event, session) => {
