@@ -1551,7 +1551,14 @@
     }
     .btn-settings:hover { background: var(--surface2); color: var(--text); }
 
-    /* ── Auth button ─────────────────────────────────────────────────────────── */
+    /* ── Auth button & avatar dropdown ───────────────────────────────────────── */
+    .auth-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
     .btn-auth {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -1573,8 +1580,25 @@
       flex-shrink: 0;
     }
     .btn-auth:hover { background: var(--surface2); border-color: var(--accent); }
-    .btn-auth.is-signed-in { color: var(--text-muted); }
-    .btn-auth.is-signed-in:hover { color: var(--text); }
+
+    /* Signed-in: collapse to a circular avatar */
+    .btn-auth.is-signed-in {
+      width: 32px;
+      min-width: 32px;
+      max-width: 32px;
+      height: 32px;
+      padding: 0;
+      border-radius: 50%;
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      justify-content: center;
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+    .btn-auth.is-signed-in:hover { background: var(--bg); border-color: var(--accent); }
+    .btn-auth.is-signed-in .btn-auth-label { display: none; }
+    .btn-auth.is-signed-in .btn-auth-icon { font-size: 0.95rem; line-height: 1; }
 
     @media (max-width: 479px) {
       .btn-auth {
@@ -1585,7 +1609,47 @@
         max-width: 36px;
       }
       .btn-auth .btn-auth-label { display: none; }
+      .btn-auth.is-signed-in { width: 32px; max-width: 32px; }
     }
+
+    #authMenu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 220px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 6px 24px rgba(44, 24, 32, 0.14);
+      display: none;
+      z-index: 150;
+      overflow: hidden;
+    }
+    #authMenu.is-open { display: block; }
+
+    .auth-menu-email {
+      padding: 12px 14px 10px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      word-break: break-all;
+      border-bottom: 1px solid var(--border);
+      line-height: 1.35;
+    }
+
+    #btnSignOut {
+      display: block;
+      width: 100%;
+      padding: 11px 14px;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 0.92rem;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    #btnSignOut:hover { background: var(--surface2); }
 
     /* ── Settings panel (slide-in from right) ───────────────────────────────── */
     .settings-backdrop {

@@ -207,36 +207,90 @@ function renderPerfil() {
 
   document.getElementById('btnGoogleSignIn').addEventListener('click', signInWithGoogle);
 
-  // ── Header auth button ──
+  // ── Header auth button + avatar dropdown ──
   const btnAuth = document.getElementById('btnAuth');
   const btnAuthLabel = btnAuth.querySelector('.btn-auth-label');
   const btnAuthIcon = btnAuth.querySelector('.btn-auth-icon');
+  const authMenu = document.getElementById('authMenu');
+  const authMenuEmail = document.getElementById('authMenuEmail');
+  const btnSignOut = document.getElementById('btnSignOut');
 
   function renderAuthButton(session) {
     if (session) {
       const email = session.user?.email || 'Cuenta';
       btnAuth.classList.add('is-signed-in');
-      btnAuth.title = `${email} — toca para cerrar sesión`;
+      btnAuth.title = email;
+      btnAuth.setAttribute('aria-haspopup', 'menu');
+      btnAuth.setAttribute('aria-expanded', authMenu.classList.contains('is-open') ? 'true' : 'false');
       btnAuthLabel.textContent = email;
       btnAuthIcon.textContent = (email[0] || '👤').toUpperCase();
+      authMenuEmail.textContent = email;
     } else {
       btnAuth.classList.remove('is-signed-in');
       btnAuth.title = 'Iniciar sesión con Google';
+      btnAuth.removeAttribute('aria-haspopup');
+      btnAuth.removeAttribute('aria-expanded');
       btnAuthLabel.textContent = 'Iniciar sesión';
       btnAuthIcon.textContent = '👤';
+      closeAuthMenu();
+    }
+  }
+
+  let outsideClickHandler = null;
+  let escapeHandler = null;
+
+  function openAuthMenu() {
+    if (authMenu.classList.contains('is-open')) return;
+    authMenu.classList.add('is-open');
+    authMenu.setAttribute('aria-hidden', 'false');
+    btnAuth.setAttribute('aria-expanded', 'true');
+    outsideClickHandler = (e) => {
+      if (!authMenu.contains(e.target) && !btnAuth.contains(e.target)) closeAuthMenu();
+    };
+    escapeHandler = (e) => { if (e.key === 'Escape') closeAuthMenu(); };
+    setTimeout(() => document.addEventListener('click', outsideClickHandler), 0);
+    document.addEventListener('keydown', escapeHandler);
+  }
+
+  function closeAuthMenu() {
+    if (!authMenu.classList.contains('is-open')) return;
+    authMenu.classList.remove('is-open');
+    authMenu.setAttribute('aria-hidden', 'true');
+    btnAuth.setAttribute('aria-expanded', 'false');
+    if (outsideClickHandler) {
+      document.removeEventListener('click', outsideClickHandler);
+      outsideClickHandler = null;
+    }
+    if (escapeHandler) {
+      document.removeEventListener('keydown', escapeHandler);
+      escapeHandler = null;
     }
   }
 
   let currentSession = null;
   btnAuth.addEventListener('click', async () => {
+    if (btnAuth.classList.contains('is-signed-in')) {
+      if (authMenu.classList.contains('is-open')) closeAuthMenu();
+      else openAuthMenu();
+      return;
+    }
     btnAuth.disabled = true;
     try {
       const session = await getSession();
-      if (session) await signOut();
-      else await signInWithGoogle();
+      if (session) {
+        renderAuthButton(session);
+        openAuthMenu();
+      } else {
+        await signInWithGoogle();
+      }
     } finally {
       btnAuth.disabled = false;
     }
+  });
+
+  btnSignOut.addEventListener('click', async () => {
+    closeAuthMenu();
+    await signOut();
   });
 
   onAuthStateChange(async (_event, session) => {
