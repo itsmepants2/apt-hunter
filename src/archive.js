@@ -16,10 +16,7 @@ export const STATUSES = [
 ];
 
 // ── Storage helper (fails gracefully in sandboxed iframes) ────────────────
-export const store = {
-  get: k => { try { return localStorage.getItem(k); } catch { return null; } },
-  set: (k, v) => { try { localStorage.setItem(k, v); return true; } catch { return false; } }
-};
+export { store } from './store.js';
 
 // ── Archive: filter state ─────────────────────────────────────────────────
 export const archiveFilter = { sort: '', colonia: '', bedrooms: '', tipo: '' };
