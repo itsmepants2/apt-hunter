@@ -36,6 +36,7 @@ import {
   renderResults,
   renderScorecard,
   renderArchive,
+  clearArchiveView,
   generateThumbnail,
   showToast,
   buildPhoneItem,
@@ -289,7 +290,7 @@ function renderPerfil() {
     await signOut();
   });
 
-  onAuthStateChange(async (_event, session) => {
+  onAuthStateChange(async (event, session) => {
     currentSession = session;
     renderAuthButton(session);
     if (session) {
@@ -301,6 +302,8 @@ function renderPerfil() {
         updateHasEntries();
         appShell.style.visibility = 'visible';
       }
+    } else if (event === 'SIGNED_OUT') {
+      clearArchiveView();
     }
   });
 

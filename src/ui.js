@@ -793,6 +793,25 @@ export function renderArchive() {
   filtered.forEach(entry => archiveList.appendChild(buildArchiveCard(entry, scoreMap.get(entry.id))));
 }
 
+// ── Sign-out: clear rendered archive without touching localStorage ────────
+export function clearArchiveView() {
+  document.getElementById('archiveList').innerHTML = '';
+  document.getElementById('archiveFilters').innerHTML = '';
+  document.getElementById('archiveTitle').textContent = 'Archivo';
+  document.getElementById('scorecardBody').innerHTML = '';
+  document.getElementById('scorecard').style.display = 'none';
+  document.getElementById('btnCsv').style.display = 'none';
+  document.getElementById('homeView').classList.remove('has-entries');
+
+  const galleryView = document.getElementById('galleryView');
+  if (galleryView.style.display === 'block') {
+    galleryView.style.display = 'none';
+    galleryView.innerHTML = '';
+    document.getElementById('appHeader').style.display = '';
+    document.getElementById('tabsBottom').style.display = '';
+  }
+}
+
 export function deleteArchivePhoto(entryId, photoSrc, onSuccess) {
   if (!confirm('¿Eliminar esta foto?')) return;
   const archive = loadArchive();
