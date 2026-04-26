@@ -7,8 +7,6 @@ import {
 
 import {
   renderResults,
-  renderUrlPreview,
-  clearUrlPreview,
   setLoading,
   showError,
   hideError,
@@ -17,13 +15,13 @@ import {
 } from './ui.js';
 
 import { saveToArchiveDirect, readFileAsDataUrl } from './archive.js';
+import { openPreview, updatePreview } from './preview.js';
 
 // ── Scan state ────────────────────────────────────────────────────────────
 export let imageBase64 = null;
 export let imageMime = 'image/jpeg';
 export let currentResult = null;
 export let currentThumbnail = null;
-export let urlPreviewData = null;  // {url, extracted, photos} — set by analyzeUrl()
 
 // ── Bulk upload state ─────────────────────────────────────────────────────
 export let bulkFiles = [];
@@ -177,36 +175,31 @@ export function extractPhotosFromHtml(html, baseUrl) {
 
 export async function analyzeUrl() {
   const urlImportInput  = document.getElementById('urlImportInput');
-  const urlImportStatus = document.getElementById('urlImportStatus');
   const btnAnalyzeUrl   = document.getElementById('btnAnalyzeUrl');
   const url = urlImportInput.value.trim();
   if (!url) return;
   try { new URL(url); } catch {
-    urlImportStatus.textContent = 'URL no válida';
-    urlImportStatus.className = 'url-import-status err';
+    // Briefly flash the input as invalid (no separate status element anymore)
+    urlImportInput.setCustomValidity('URL no válida');
+    urlImportInput.reportValidity();
+    setTimeout(() => urlImportInput.setCustomValidity(''), 2000);
     return;
   }
 
   btnAnalyzeUrl.disabled = true;
   btnAnalyzeUrl.textContent = '…';
-  urlImportStatus.className = 'url-import-status';
-  urlImportStatus.textContent = 'Obteniendo página…';
-  clearUrlPreview();
-  urlPreviewData = null;
+
+  const reqId = openPreview('url', { status: 'extracting', sourceUrl: url });
 
   try {
     const html = await fetchUrlViaWorker(url);
-    urlImportStatus.textContent = 'Extrayendo datos con Claude…';
     const [extracted, photos] = await Promise.all([
       extractListingFromText(htmlToText(html)),
       Promise.resolve(extractPhotosFromHtml(html, url)),
     ]);
-    urlPreviewData = { url, extracted, photos };
-    renderUrlPreview(urlPreviewData);
-    urlImportStatus.textContent = '';
+    updatePreview(reqId, { status: 'ready', extracted, photos });
   } catch (e) {
-    urlImportStatus.textContent = `Error: ${e.message}`;
-    urlImportStatus.className = 'url-import-status err';
+    updatePreview(reqId, { status: 'error', error: e.message });
   } finally {
     btnAnalyzeUrl.disabled = false;
     btnAnalyzeUrl.textContent = 'Analizar';

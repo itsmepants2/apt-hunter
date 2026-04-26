@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#FBF5F4">
   <title>Mis Niditos</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/styles.css?v=9">
+  <link rel="stylesheet" href="css/styles.css?v=10">
   <style>
     #authView {
       display: none;
@@ -79,7 +79,6 @@
           <button class="btn btn-ghost" id="btnAnalyzeUrl">Analizar</button>
           <button class="btn-camera-hero" id="btnCameraHero" type="button" title="Subir foto">📷</button>
         </div>
-        <div class="url-import-status" id="urlImportStatus"></div>
         <div id="uploadCol">
           <div class="card">
             <div class="card-label">Foto del letrero</div>
@@ -97,7 +96,6 @@
           <button class="btn btn-analyze" id="btnAnalyze" disabled>Analizar letrero</button>
           <div class="error-box" id="errorBox"></div>
         </div>
-        <div id="urlPreviewCard" style="display:none;"></div>
         <div class="results" id="results">
           <div class="card"><div class="card-label">Información extraída</div><div class="listing-grid" id="listingGrid"></div></div>
           <div class="card"><div class="card-label">Mensaje generado</div><div class="message-box" id="messageBox"></div></div>
@@ -128,6 +126,22 @@
       </div>
     </div>
     <div id="galleryView" style="display:none;"></div>
+    <div id="previewView" style="display:none;">
+      <header class="preview-header">
+        <button id="previewBack" class="preview-back" type="button" aria-label="Descartar">←</button>
+        <h2 id="previewTitle" class="preview-title">Vista previa</h2>
+      </header>
+      <div class="preview-body">
+        <div id="previewStatus" class="preview-status"></div>
+        <div id="previewPhotos" class="preview-photos"></div>
+        <div id="previewSource" class="preview-source"></div>
+        <div id="previewFields" class="preview-fields"></div>
+      </div>
+      <footer class="preview-actions">
+        <button id="previewDiscard" class="btn btn-secondary" type="button">Descartar</button>
+        <button id="previewSave" class="btn btn-analyze" type="button">Guardar</button>
+      </footer>
+    </div>
     <div id="perfilView" style="display:none;">
       <div class="card">
         <div class="card-label">Básicos</div>

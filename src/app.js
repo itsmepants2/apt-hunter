@@ -31,6 +31,8 @@ import {
 
 import { exportCSV } from './csv.js';
 import { getSession, onAuthStateChange, signInWithGoogle, signOut } from './auth.js';
+import { closePreview, getPreviewData } from './preview.js';
+import { saveEntry } from './db.js';
 
 import {
   renderResults,
@@ -74,6 +76,61 @@ export function saveToArchive(waNumber, displayNumber) {
   showToast('💾 Guardado en archivo ✓');
   updateHasEntries();
   gistPush();
+}
+
+// ── Preview takeover: save handler ─────────────────────────────────────────
+// Builds the archive entry from the preview's live field/photo state and
+// commits it. Entry shape must stay in sync with what the previous inline
+// preview wrote (see ui.js renderUrlPreview before step 2A) — the STATUSES
+// mismatch on `status: 'spotted'` is a known issue tracked separately.
+function savePreviewEntry() {
+  const data = getPreviewData();
+  if (!data) return;
+  const { sourceUrl, fields, visiblePhotos } = data;
+
+  const entry = {
+    id: Date.now() + Math.random(),
+    date: new Date().toISOString(),
+    thumbnail:        visiblePhotos[0] || null,
+    address:          fields.neighborhood || null,
+    type:             null,
+    price:            null,
+    extras:           null,
+    allPhones:        [],
+    contactedNumber:  null,
+    contactedDisplay: null,
+    whatsappMessage:  '',
+    status:           'spotted',
+    notes:            fields.notes,
+    bedrooms:         fields.bedrooms,
+    bathrooms:        fields.bathrooms,
+    parking:          fields.parking,
+    priceMxn:         fields.priceMxn,
+    sizeSqm:          fields.sizeSqm,
+    neighborhood:     fields.neighborhood,
+    amenities:        fields.amenities,
+    extraPhotos:      visiblePhotos.slice(1),
+    sourceUrl:        sourceUrl,
+  };
+
+  const archive = loadArchive();
+  archive.unshift(entry);
+  store.set('apt_hunter_archive', JSON.stringify(archive));
+  saveEntry(entry);
+  renderScorecard();
+  renderArchive();
+  updateHasEntries();
+  gistPush();
+  showToast('💾 Guardado en archivo ✓');
+
+  closePreview();
+  const urlInput = document.getElementById('urlImportInput');
+  if (urlInput) urlInput.value = '';
+
+  // Land on home, scrolled to the archive list
+  switchTab('home');
+  const archiveEl = document.getElementById('homeArchive');
+  if (archiveEl) archiveEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ── has-entries state ─────────────────────────────────────────────────────
@@ -356,6 +413,11 @@ function renderPerfil() {
   // ── URL import ──
   btnAnalyzeUrl.addEventListener('click', analyzeUrl);
   urlImportInput.addEventListener('keydown', e => { if (e.key === 'Enter') analyzeUrl(); });
+
+  // ── Preview takeover controls ──
+  document.getElementById('previewBack').addEventListener('click', closePreview);
+  document.getElementById('previewDiscard').addEventListener('click', closePreview);
+  document.getElementById('previewSave').addEventListener('click', savePreviewEntry);
 
   // ── Bulk upload ──
   let dropHandled = false;
