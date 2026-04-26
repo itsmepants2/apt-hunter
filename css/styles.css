@@ -187,10 +187,7 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Results */
-    .results { display: none; }
-    .results.visible { display: block; }
-
+    /* Listing grid (used by gallery view) */
     .listing-grid {
       display: grid;
       gap: 10px;
@@ -216,20 +213,6 @@
       line-height: 1.4;
     }
 
-    .phone-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(37,211,102,0.12);
-      border: 1px solid rgba(37,211,102,0.3);
-      color: var(--green);
-      border-radius: 20px;
-      padding: 4px 12px;
-      font-size: 0.9rem;
-      font-weight: 500;
-      margin: 2px;
-    }
-
     .wa-btn {
       display: flex;
       align-items: center;
@@ -252,23 +235,6 @@
       width: 24px;
       height: 24px;
       flex-shrink: 0;
-    }
-
-    .message-box {
-      background: var(--surface2);
-      border-radius: 8px;
-      padding: 12px;
-      font-size: 0.9rem;
-      line-height: 1.6;
-      white-space: pre-wrap;
-      word-break: break-word;
-      border-left: 3px solid var(--green);
-    }
-
-    .multi-contact {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
     }
 
     /* Multi-number cards */
@@ -2263,6 +2229,91 @@
       min-width: 0;
     }
     .preview-source-link:hover { text-decoration: underline; color: var(--text); }
+
+    /* Scan mode — raw sign data */
+    .preview-scan-meta {
+      padding: 14px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.88rem;
+    }
+    .preview-scan-meta:empty { display: none; }
+
+    .preview-scan-meta-heading {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .preview-scan-meta dl {
+      display: grid;
+      grid-template-columns: max-content 1fr;
+      column-gap: 14px;
+      row-gap: 8px;
+      margin: 0;
+    }
+
+    .preview-scan-meta dt {
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.82rem;
+    }
+
+    .preview-scan-meta dd {
+      margin: 0;
+      color: var(--text);
+      line-height: 1.4;
+      word-break: break-word;
+    }
+
+    /* Scan mode — generated WhatsApp message (read-only) */
+    .preview-wa-message {
+      padding: 12px 14px;
+      background: var(--surface2);
+      border-left: 3px solid var(--green);
+      border-radius: 8px;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      font-style: italic;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .preview-wa-message:empty { display: none; }
+
+    .preview-wa-message-label {
+      display: block;
+      font-style: normal;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    /* Scan mode — WhatsApp contact buttons */
+    .preview-wa-contacts {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .preview-wa-contacts:empty { display: none; }
+
+    .preview-wa-contacts-empty {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 10px 12px;
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      text-align: center;
+    }
 
     .preview-fields {
       display: grid;

@@ -1,6 +1,19 @@
 // src/preview.js — full-viewport takeover for the extract → edit → save flow.
-// Step 2A handles mode === 'url' only; the API is shaped so 'scan' can join in 2B
-// without changing signatures.
+// Both URL and sign-scan modes render here; scan mode adds three extra
+// surfaces (raw sign meta, WhatsApp message, WA contact buttons).
+
+import { buildPhoneItem } from './ui.js';
+
+let _phoneContactHandler = null;
+export function registerPhoneContactHandler(fn) { _phoneContactHandler = fn; }
+
+const SCAN_META_LABELS = [
+  ['type',         'Tipo'],
+  ['price',        'Precio'],
+  ['address',      'Dirección'],
+  ['extras',       'Extras'],
+  ['contact_name', 'Contacto'],
+];
 
 const FIELD_DEFS = [
   { key: 'priceMxn',     label: 'Precio (MXN)', type: 'text',   placeholder: '15,000/mes' },
@@ -88,22 +101,31 @@ function hideView() {
   document.getElementById('previewStatus').innerHTML = '';
   document.getElementById('previewPhotos').innerHTML = '';
   document.getElementById('previewSource').innerHTML = '';
+  document.getElementById('previewScanMeta').innerHTML = '';
+  document.getElementById('previewWhatsAppMessage').innerHTML = '';
+  document.getElementById('previewWhatsAppContacts').innerHTML = '';
   document.getElementById('previewFields').innerHTML = '';
 }
 
 function render() {
   if (!state) return;
 
-  const statusEl  = document.getElementById('previewStatus');
-  const photosEl  = document.getElementById('previewPhotos');
-  const sourceEl  = document.getElementById('previewSource');
-  const fieldsEl  = document.getElementById('previewFields');
-  const saveBtn   = document.getElementById('previewSave');
+  const statusEl    = document.getElementById('previewStatus');
+  const photosEl    = document.getElementById('previewPhotos');
+  const sourceEl    = document.getElementById('previewSource');
+  const scanMetaEl  = document.getElementById('previewScanMeta');
+  const waMsgEl     = document.getElementById('previewWhatsAppMessage');
+  const waContactEl = document.getElementById('previewWhatsAppContacts');
+  const fieldsEl    = document.getElementById('previewFields');
+  const saveBtn     = document.getElementById('previewSave');
 
-  statusEl.innerHTML = '';
-  photosEl.innerHTML = '';
-  sourceEl.innerHTML = '';
-  fieldsEl.innerHTML = '';
+  statusEl.innerHTML    = '';
+  photosEl.innerHTML    = '';
+  sourceEl.innerHTML    = '';
+  scanMetaEl.innerHTML  = '';
+  waMsgEl.innerHTML     = '';
+  waContactEl.innerHTML = '';
+  fieldsEl.innerHTML    = '';
   state.inputRefs = {};
 
   if (state.status === 'extracting') {
@@ -158,8 +180,61 @@ function render() {
     sourceEl.appendChild(link);
   }
 
-  // Editable fields
+  // Scan-mode-only surfaces: raw sign meta, WA message, WA contacts
   const extracted = state.extracted || {};
+  if (state.mode === 'scan' && state.extracted) {
+    // Raw sign data
+    const metaPairs = SCAN_META_LABELS
+      .map(([key, label]) => [label, extracted[key]])
+      .filter(([, v]) => v != null && v !== '' && v !== 'null');
+
+    if (metaPairs.length) {
+      const heading = document.createElement('div');
+      heading.className = 'preview-scan-meta-heading';
+      heading.textContent = 'Datos del letrero';
+      scanMetaEl.appendChild(heading);
+
+      const dl = document.createElement('dl');
+      metaPairs.forEach(([label, value]) => {
+        const dt = document.createElement('dt');
+        dt.textContent = label;
+        const dd = document.createElement('dd');
+        dd.textContent = String(value);
+        dl.appendChild(dt);
+        dl.appendChild(dd);
+      });
+      scanMetaEl.appendChild(dl);
+    }
+
+    // Generated WhatsApp message
+    const waLabel = document.createElement('span');
+    waLabel.className = 'preview-wa-message-label';
+    waLabel.textContent = 'Mensaje generado';
+    waMsgEl.appendChild(waLabel);
+    const waText = document.createTextNode(extracted.whatsapp_message || '(no generado)');
+    waMsgEl.appendChild(waText);
+
+    // WhatsApp contact buttons
+    const phones = (extracted.phones || [])
+      .filter(Boolean)
+      .map(p => typeof p === 'string' ? { number: p, position: null, label: null } : p);
+
+    if (phones.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'preview-wa-contacts-empty';
+      empty.textContent = 'No se detectaron números de teléfono.';
+      waContactEl.appendChild(empty);
+    } else {
+      const isSingle = phones.length === 1;
+      phones.forEach(p => {
+        waContactEl.appendChild(
+          buildPhoneItem(p, extracted.whatsapp_message || '', isSingle, _phoneContactHandler)
+        );
+      });
+    }
+  }
+
+  // Editable fields
   FIELD_DEFS.forEach(({ key, label, type, placeholder, wide }) => {
     const wrap = document.createElement('div');
     wrap.className = 'archive-field' + (wide ? ' wide' : '');

@@ -13,7 +13,7 @@ import {
   initGalleryMode,
 } from './archive.js';
 
-import { saveToArchive, switchTab } from './app.js';
+import { switchTab } from './app.js';
 
 
 import { scoreEntry } from './scoring.js';
@@ -163,71 +163,6 @@ export function generateThumbnail(dataUrl) {
   });
 }
 
-// ── Results ────────────────────────────────────────────────────────────────
-export function renderResults(r) {
-  const listingGrid  = document.getElementById('listingGrid');
-  const messageBox   = document.getElementById('messageBox');
-  const contactLinks = document.getElementById('contactLinks');
-  const resultsEl    = document.getElementById('results');
-
-  // Listing grid
-  const fields = [
-    ['Tipo', r.type],
-    ['Precio', r.price],
-    ['Habitaciones', r.rooms],
-    ['Dirección', r.address],
-    ['Extras', r.extras],
-    ['Contacto', r.contact_name],
-  ].filter(([, v]) => v && v !== 'null');
-
-  // Normalize phone entries: handle both legacy string[] and new object[] format
-  const phones = (r.phones || [])
-    .filter(Boolean)
-    .map(p => typeof p === 'string' ? { number: p, position: null, label: null } : p);
-
-  listingGrid.innerHTML = '';
-
-  if (phones.length) {
-    const phoneEl = document.createElement('div');
-    phoneEl.className = 'listing-item';
-    phoneEl.innerHTML = `<div class="listing-item-label">Teléfonos</div>
-      <div>${phones.map(p => {
-        const meta = [p.label, p.position].filter(Boolean).join(' · ');
-        return `<span class="phone-chip">📞 ${escHtml(p.number)}${meta ? `<span style="opacity:0.7;font-size:0.8em"> · ${escHtml(meta)}</span>` : ''}</span>`;
-      }).join('')}</div>`;
-    listingGrid.appendChild(phoneEl);
-  }
-
-  fields.forEach(([label, value]) => {
-    const el = document.createElement('div');
-    el.className = 'listing-item';
-    el.innerHTML = `<div class="listing-item-label">${label}</div><div class="listing-item-value">${escHtml(value)}</div>`;
-    listingGrid.appendChild(el);
-  });
-
-  if (!listingGrid.children.length) {
-    listingGrid.innerHTML = '<div class="listing-item" style="color:var(--text-muted)">No se encontró información en el letrero.</div>';
-  }
-
-  // Message
-  messageBox.textContent = r.whatsapp_message || '(no generado)';
-
-  // WhatsApp links
-  contactLinks.innerHTML = '';
-
-  if (phones.length === 0) {
-    contactLinks.innerHTML = '<div style="color:var(--text-muted);font-size:0.88rem;">No se detectaron números de teléfono.</div>';
-  } else {
-    const isSingle = phones.length === 1;
-    phones.forEach(p => {
-      contactLinks.appendChild(buildPhoneItem(p, r.whatsapp_message || '', isSingle));
-    });
-  }
-
-  resultsEl.classList.add('visible');
-  resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
 // ── Country-code helpers ───────────────────────────────────────────────────
 export const CC_PRESETS = [
   { code: '52', flag: '🇲🇽', label: '+52 México' },
@@ -252,13 +187,15 @@ export function saveCC(cc) {
 }
 
 // Build a full phone item (either a big button or a card with optional CC picker)
-export function buildPhoneItem(p, waMessage, isSingle) {
+// onContact(waNum, displayNumber) is invoked when the user picks this contact —
+// caller is responsible for any archive save / takeover-close side effects.
+export function buildPhoneItem(p, waMessage, isSingle, onContact) {
   const localDigits = String(p.number || '').replace(/\D/g, '');
   const metaParts   = [p.label, p.position].filter(Boolean);
   const msg         = encodeURIComponent(waMessage);
 
   // Helper: make the final wa.me anchor
-  // skipSave=true when the caller already handles the archive save (CC picker flow)
+  // skipSave=true when the caller already invoked onContact (CC picker flow)
   function makeWaLink(cc, bigBtn, skipSave = false) {
     const waNum = buildWaNumber(localDigits, cc);
     const href = `https://wa.me/${waNum}?text=${msg}`;
@@ -267,7 +204,7 @@ export function buildPhoneItem(p, waMessage, isSingle) {
     a.target = '_blank';
     a.rel = 'noopener noreferrer';
     if (!skipSave) {
-      a.addEventListener('click', () => saveToArchive(waNum, p.number));
+      a.addEventListener('click', () => onContact(waNum, p.number));
     }
     if (bigBtn) {
       a.className = 'wa-btn';
@@ -343,7 +280,7 @@ export function buildPhoneItem(p, waMessage, isSingle) {
     }
     saveCC(cc);
     const waNum = buildWaNumber(localDigits, cc);
-    saveToArchive(waNum, p.number);
+    onContact(waNum, p.number);
     // Replace picker row with persistent link (no double-save on re-click)
     const link = makeWaLink(cc, false, true);
     pickerRow.replaceWith(link);

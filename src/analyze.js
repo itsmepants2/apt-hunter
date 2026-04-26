@@ -6,7 +6,6 @@ import {
 } from './services.js';
 
 import {
-  renderResults,
   setLoading,
   showError,
   hideError,
@@ -15,7 +14,7 @@ import {
 } from './ui.js';
 
 import { saveToArchiveDirect, readFileAsDataUrl } from './archive.js';
-import { openPreview, updatePreview } from './preview.js';
+import { openPreview, updatePreview, getCurrentRequestId } from './preview.js';
 
 // ── Scan state ────────────────────────────────────────────────────────────
 export let imageBase64 = null;
@@ -99,23 +98,40 @@ export async function analyzeImage(base64, mime) {
   return JSON.parse(jsonStr.trim());
 }
 
+// Map raw scan-result keys onto the takeover's editable-field keys.
+// Mappings settled in step 2B: rooms→bedrooms, address→neighborhood,
+// extras→amenities. Other fields stay empty for the user to fill in.
+function scanResultToFields(r) {
+  return {
+    bedrooms:     r.rooms   != null && r.rooms   !== 'null' ? String(r.rooms)   : '',
+    neighborhood: r.address != null && r.address !== 'null' ? String(r.address) : '',
+    amenities:    r.extras  != null && r.extras  !== 'null' ? String(r.extras)  : '',
+  };
+}
+
 export async function analyze() {
   if (!imageBase64) return showError('Primero sube o toma una foto.');
 
   setLoading(true);
   hideError();
-  document.getElementById('results').classList.remove('visible');
+
+  const dataUrl = `data:${imageMime};base64,${imageBase64}`;
+  const reqId = openPreview('scan', { status: 'extracting', photos: [dataUrl] });
 
   try {
     const result = await analyzeImage(imageBase64, imageMime);
+    if (reqId !== getCurrentRequestId()) return; // user discarded
     currentResult = result;
-    renderResults(result);
+    updatePreview(reqId, {
+      status: 'ready',
+      extracted: { ...result, ...scanResultToFields(result) },
+    });
   } catch (err) {
-    if (err instanceof SyntaxError) {
-      showError('No se pudo parsear la respuesta de la API. Intenta de nuevo.');
-    } else {
-      showError(`Error: ${err.message}`);
-    }
+    if (reqId !== getCurrentRequestId()) return; // user discarded
+    const msg = err instanceof SyntaxError
+      ? 'No se pudo parsear la respuesta de la API. Intenta de nuevo.'
+      : err.message;
+    updatePreview(reqId, { status: 'error', error: msg });
   } finally {
     setLoading(false);
   }
@@ -211,7 +227,6 @@ export function handleFile(file) {
   const captureZone = document.getElementById('captureZone');
   const btnClear    = document.getElementById('btnClear');
   const btnAnalyze  = document.getElementById('btnAnalyze');
-  const resultsEl   = document.getElementById('results');
   const fileCamera  = document.getElementById('fileCamera');
   const fileUpload  = document.getElementById('fileUpload');
 
@@ -233,7 +248,6 @@ export function handleFile(file) {
     btnClear.style.display = '';
     btnAnalyze.disabled = false;
     hideError();
-    resultsEl.classList.remove('visible');
   };
   reader.readAsDataURL(file);
   // Reset file inputs so same file can be reselected
@@ -245,7 +259,6 @@ export function clearImage() {
   const captureZone = document.getElementById('captureZone');
   const btnClear    = document.getElementById('btnClear');
   const btnAnalyze  = document.getElementById('btnAnalyze');
-  const resultsEl   = document.getElementById('results');
 
   imageBase64 = null;
   currentThumbnail = null;
@@ -260,7 +273,6 @@ export function clearImage() {
   captureZone.classList.remove('has-image');
   btnClear.style.display = 'none';
   btnAnalyze.disabled = true;
-  resultsEl.classList.remove('visible');
   hideError();
 }
 

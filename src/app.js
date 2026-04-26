@@ -31,87 +31,80 @@ import {
 
 import { exportCSV } from './csv.js';
 import { getSession, onAuthStateChange, signInWithGoogle, signOut } from './auth.js';
-import { closePreview, getPreviewData } from './preview.js';
+import { closePreview, getPreviewData, registerPhoneContactHandler } from './preview.js';
 import { saveEntry } from './db.js';
 
 import {
-  renderResults,
   renderScorecard,
   renderArchive,
   clearArchiveView,
   generateThumbnail,
   showToast,
-  buildPhoneItem,
 } from './ui.js';
-
-// ── Save to archive (uses scan-state from analyze.js) ─────────────────────
-export function saveToArchive(waNumber, displayNumber) {
-  if (!currentResult) return;
-  const archive = loadArchive();
-  const entry = {
-    id: Date.now(),
-    date: new Date().toISOString(),
-    thumbnail: currentThumbnail || null,
-    address:   currentResult.address || null,
-    type:      currentResult.type    || null,
-    price:     currentResult.price   || null,
-    extras:    currentResult.extras  || null,
-    allPhones: (currentResult.phones || []).map(p => p.number || p),
-    contactedNumber:  waNumber,
-    contactedDisplay: displayNumber,
-    whatsappMessage:  currentResult.whatsapp_message || '',
-    status:       'spotted',
-    notes:        '',
-    bedrooms:     '',
-    bathrooms:    '',
-    parking:      '',
-    priceMxn:     '',
-    sizeSqm:      '',
-    neighborhood: '',
-    amenities:    '',
-    extraPhotos:  []
-  };
-  archive.unshift(entry);
-  store.set('apt_hunter_archive', JSON.stringify(archive));
-  showToast('💾 Guardado en archivo ✓');
-  updateHasEntries();
-  gistPush();
-}
 
 // ── Preview takeover: save handler ─────────────────────────────────────────
 // Builds the archive entry from the preview's live field/photo state and
-// commits it. Entry shape must stay in sync with what the previous inline
-// preview wrote (see ui.js renderUrlPreview before step 2A) — the STATUSES
-// mismatch on `status: 'spotted'` is a known issue tracked separately.
-function savePreviewEntry() {
+// commits it. Branches on mode: URL writes the post-2A shape; scan merges
+// currentResult from analyze.js with the takeover fields and (for WA-click
+// saves) the contact info. The STATUSES mismatch on `status: 'spotted'`
+// is a known issue tracked separately.
+function savePreviewEntry(contactInfo = null) {
   const data = getPreviewData();
   if (!data) return;
-  const { sourceUrl, fields, visiblePhotos } = data;
+  const { mode, sourceUrl, fields, visiblePhotos } = data;
 
-  const entry = {
-    id: Date.now() + Math.random(),
-    date: new Date().toISOString(),
-    thumbnail:        visiblePhotos[0] || null,
-    address:          fields.neighborhood || null,
-    type:             null,
-    price:            null,
-    extras:           null,
-    allPhones:        [],
-    contactedNumber:  null,
-    contactedDisplay: null,
-    whatsappMessage:  '',
-    status:           'spotted',
-    notes:            fields.notes,
-    bedrooms:         fields.bedrooms,
-    bathrooms:        fields.bathrooms,
-    parking:          fields.parking,
-    priceMxn:         fields.priceMxn,
-    sizeSqm:          fields.sizeSqm,
-    neighborhood:     fields.neighborhood,
-    amenities:        fields.amenities,
-    extraPhotos:      visiblePhotos.slice(1),
-    sourceUrl:        sourceUrl,
-  };
+  let entry;
+  if (mode === 'scan') {
+    const r = currentResult || {};
+    entry = {
+      id: Date.now() + Math.random(),
+      date: new Date().toISOString(),
+      type:             r.type    || null,
+      price:            r.price   || null,
+      address:          r.address || null,
+      extras:           r.extras  || null,
+      allPhones:        (r.phones || []).map(p => p.number || p),
+      whatsappMessage:  r.whatsapp_message || '',
+      priceMxn:         fields.priceMxn,
+      sizeSqm:          fields.sizeSqm,
+      neighborhood:     fields.neighborhood,
+      bedrooms:         fields.bedrooms,
+      bathrooms:        fields.bathrooms,
+      parking:          fields.parking,
+      amenities:        fields.amenities,
+      notes:            fields.notes,
+      thumbnail:        currentThumbnail || null,
+      extraPhotos:      [],
+      status:           'spotted',
+      contactedNumber:  contactInfo?.contactedNumber  || null,
+      contactedDisplay: contactInfo?.contactedDisplay || null,
+    };
+  } else {
+    entry = {
+      id: Date.now() + Math.random(),
+      date: new Date().toISOString(),
+      thumbnail:        visiblePhotos[0] || null,
+      address:          fields.neighborhood || null,
+      type:             null,
+      price:            null,
+      extras:           null,
+      allPhones:        [],
+      contactedNumber:  null,
+      contactedDisplay: null,
+      whatsappMessage:  '',
+      status:           'spotted',
+      notes:            fields.notes,
+      bedrooms:         fields.bedrooms,
+      bathrooms:        fields.bathrooms,
+      parking:          fields.parking,
+      priceMxn:         fields.priceMxn,
+      sizeSqm:          fields.sizeSqm,
+      neighborhood:     fields.neighborhood,
+      amenities:        fields.amenities,
+      extraPhotos:      visiblePhotos.slice(1),
+      sourceUrl:        sourceUrl,
+    };
+  }
 
   const archive = loadArchive();
   archive.unshift(entry);
@@ -124,8 +117,13 @@ function savePreviewEntry() {
   showToast('💾 Guardado ✓ — recarga para ver el archivo');
 
   closePreview();
-  const urlInput = document.getElementById('urlImportInput');
-  if (urlInput) urlInput.value = '';
+
+  if (mode === 'scan') {
+    clearImage();
+  } else {
+    const urlInput = document.getElementById('urlImportInput');
+    if (urlInput) urlInput.value = '';
+  }
 
   // Land on home, scrolled to the archive list
   switchTab('home');
@@ -417,7 +415,13 @@ function renderPerfil() {
   // ── Preview takeover controls ──
   document.getElementById('previewBack').addEventListener('click', closePreview);
   document.getElementById('previewDiscard').addEventListener('click', closePreview);
-  document.getElementById('previewSave').addEventListener('click', savePreviewEntry);
+  document.getElementById('previewSave').addEventListener('click', () => savePreviewEntry());
+
+  // Scan-mode WhatsApp click: save with contact info, then natural-navigate
+  // (or window.open in CC picker) opens WhatsApp.
+  registerPhoneContactHandler((waNum, displayNumber) => {
+    savePreviewEntry({ contactedNumber: waNum, contactedDisplay: displayNumber });
+  });
 
   // ── Bulk upload ──
   let dropHandled = false;

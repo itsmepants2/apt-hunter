@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#FBF5F4">
   <title>Mis Niditos</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/styles.css?v=10">
+  <link rel="stylesheet" href="css/styles.css?v=11">
   <style>
     #authView {
       display: none;
@@ -96,11 +96,6 @@
           <button class="btn btn-analyze" id="btnAnalyze" disabled>Analizar letrero</button>
           <div class="error-box" id="errorBox"></div>
         </div>
-        <div class="results" id="results">
-          <div class="card"><div class="card-label">Información extraída</div><div class="listing-grid" id="listingGrid"></div></div>
-          <div class="card"><div class="card-label">Mensaje generado</div><div class="message-box" id="messageBox"></div></div>
-          <div class="card"><div class="card-label">Abrir en WhatsApp</div><div class="multi-contact" id="contactLinks"></div></div>
-        </div>
         <div class="card" id="bulkCard" style="margin-top:16px;">
           <div class="card-label">Carga masiva</div>
           <label class="bulk-drop" id="bulkDrop"><input type="file" id="bulkInput" accept="image/*" multiple>
@@ -135,6 +130,9 @@
         <div id="previewStatus" class="preview-status"></div>
         <div id="previewPhotos" class="preview-photos"></div>
         <div id="previewSource" class="preview-source"></div>
+        <div id="previewScanMeta" class="preview-scan-meta"></div>
+        <div id="previewWhatsAppMessage" class="preview-wa-message"></div>
+        <div id="previewWhatsAppContacts" class="preview-wa-contacts"></div>
         <div id="previewFields" class="preview-fields"></div>
       </div>
       <footer class="preview-actions">
