@@ -44,7 +44,9 @@ fetch('https://apt-hunter-proxy.stevebryant.workers.dev/fx')
 
 // ── Archive: persistence ──────────────────────────────────────────────────
 export function loadArchive() {
-  if (_dbCache !== null) return _dbCache;
+  // Cache only shadows localStorage when it holds authoritative non-empty
+  // Supabase data — match the write side at dbReady's `rows.length > 0` guard.
+  if (_dbCache !== null && _dbCache.length > 0) return _dbCache;
   try { return JSON.parse(store.get('apt_hunter_archive') || '[]'); }
   catch { return []; }
 }
