@@ -121,7 +121,7 @@ function savePreviewEntry() {
   renderArchive();
   updateHasEntries();
   gistPush();
-  showToast('💾 Guardado en archivo ✓');
+  showToast('💾 Guardado ✓ — recarga para ver el archivo');
 
   closePreview();
   const urlInput = document.getElementById('urlImportInput');
