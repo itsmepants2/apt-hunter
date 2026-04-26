@@ -247,20 +247,9 @@ function renderPerfil() {
 (async function init() {
   // ── Auth gate ──
   const appShell   = document.getElementById('appShell');
-  const authView   = document.getElementById('authView');
   const appHeader  = document.getElementById('appHeader');
   const tabContent = document.getElementById('tabContent');
   const tabsBottom = document.getElementById('tabsBottom');
-
-  function showAuth() {
-    authView.style.display = 'flex';
-  }
-
-  function hideAuth() {
-    authView.style.display = 'none';
-  }
-
-  document.getElementById('btnGoogleSignIn').addEventListener('click', signInWithGoogle);
 
   // ── Header auth button + avatar dropdown ──
   const btnAuth = document.getElementById('btnAuth');
@@ -348,7 +337,6 @@ function renderPerfil() {
     currentSession = session;
     renderAuthButton(session);
     if (session) {
-      hideAuth();
       if (appShell.style.visibility !== 'visible') {
         await dbReady;
         renderArchive();
