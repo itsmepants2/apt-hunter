@@ -1,4 +1,4 @@
-const CACHE = 'mis-niditos-v11';
+const CACHE = 'mis-niditos-v12';
 const ASSETS = [
   '/apt-hunter/',
   '/apt-hunter/index.html',
@@ -21,8 +21,11 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Network-first for API calls, cache-first for assets
-  if (e.request.url.includes('anthropic.com')) return;
+  // Cache-first for same-origin GETs only. Cross-origin requests (Supabase,
+  // GitHub, Cloudflare worker, esm.sh) and non-GETs pass through to the
+  // network — re-issuing them from the SW context can throw "Failed to fetch".
+  if (e.request.method !== 'GET') return;
+  if (new URL(e.request.url).origin !== self.location.origin) return;
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
   );
