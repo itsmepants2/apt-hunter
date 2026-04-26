@@ -1,4 +1,4 @@
-const CACHE = 'mis-niditos-v16';
+const CACHE = 'mis-niditos-v17';
 const ASSETS = [
   '/apt-hunter/',
   '/apt-hunter/index.html',

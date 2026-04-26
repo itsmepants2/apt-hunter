@@ -16,8 +16,18 @@ export async function signOut() {
 
 export async function getSession() {
   const supabase = getSupabaseClient();
-  const { data } = await supabase.auth.getSession();
-  return data?.session || null;
+  try {
+    const { data } = await Promise.race([
+      supabase.auth.getSession(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('getSession timeout')), 3000)
+      ),
+    ]);
+    return data?.session || null;
+  } catch (err) {
+    console.warn('[auth] getSession failed or timed out, treating as no session:', err.message);
+    return null;
+  }
 }
 
 export function onAuthStateChange(callback) {
