@@ -38,7 +38,7 @@ const CRITERION_LABELS = {
 // ── Scoring adapters (archive fields → scoring engine fields) ──────────────
 function loadScoringProfile() {
   try {
-    const raw = JSON.parse(localStorage.getItem('searchProfile') || 'null');
+    const raw = JSON.parse(store.get('searchProfile') || 'null');
     if (!raw) return null;
     return {
       recamaras:        raw.recamarasMin,
