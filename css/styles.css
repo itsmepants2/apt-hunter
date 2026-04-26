@@ -1293,6 +1293,17 @@
       margin-bottom: 20px;
     }
 
+    #headerNav {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex-grow: 1;
+      justify-content: center;
+    }
+    @media (max-width: 767px) {
+      #headerNav { display: none; }
+    }
+
     #headerBrand .subtitle { margin-bottom: 0; }
 
     .brand-tagline {
@@ -1832,17 +1843,39 @@
     .btn-save-perfil:hover { background: var(--accent-hover); color: var(--text); }
     .btn-save-perfil:active { opacity: 0.85; }
 
-    /* ── Home view layout ──────────────────────────────────────────────────── */
-    #homeView {
+    /* ── Top-level routed views ────────────────────────────────────────────── */
+    #homeView, #archiveView, #perfilView { display: none; }
+    #homeView.is-active {
       display: flex;
       flex-direction: column;
       gap: 1.5rem;
     }
+    #archiveView.is-active { display: block; }
+    #perfilView.is-active  { display: block; }
 
-    #homeInput,
-    #homeArchive {
-      width: 100%;
+    #homeInput { width: 100%; }
+
+    /* ── Home state-aware prompt ───────────────────────────────────────────── */
+    #homeStatePrompt {
+      text-align: center;
+      padding: 16px 24px;
     }
+    .home-state-prompt-empty {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin: 0;
+    }
+    .home-state-prompt-link {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 8px 16px;
+      font-family: inherit;
+    }
+    .home-state-prompt-link:hover { text-decoration: underline; }
 
     /* Bulk card hidden on home — replaced by hero search row */
     #bulkCard  { display: none; }

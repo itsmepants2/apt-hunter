@@ -13,7 +13,7 @@ import {
   initGalleryMode,
 } from './archive.js';
 
-import { switchTab } from './app.js';
+import { navigateTo } from './router.js';
 
 
 import { scoreEntry } from './scoring.js';
@@ -672,7 +672,7 @@ export function buildArchiveCard(entry, scoreResult = null) {
     mainImg.src = allPhotos[0];
     mainImg.alt = 'Foto principal';
     mainImg.addEventListener('click', () => {
-      history.pushState({ property: entry.id }, '', `${location.pathname}?property=${entry.id}`);
+      history.pushState({ property: entry.id }, '', `${location.pathname}#/archivo?property=${entry.id}`);
       initGalleryMode(entry.id);
     });
     // Hide cell if image fails to load (broken src / avatar placeholder)
@@ -707,13 +707,13 @@ export function buildArchiveCard(entry, scoreResult = null) {
         overlay.className = 'archive-photo-overlay';
         overlay.textContent = `Ver todas (${allPhotos.length})`;
         overlay.addEventListener('click', () => {
-          history.pushState({ property: entry.id }, '', `${location.pathname}?property=${entry.id}`);
+          history.pushState({ property: entry.id }, '', `${location.pathname}#/archivo?property=${entry.id}`);
           initGalleryMode(entry.id);
         });
         cell.appendChild(overlay);
       } else {
         cell.addEventListener('click', () => {
-          history.pushState({ property: entry.id }, '', `${location.pathname}?property=${entry.id}`);
+          history.pushState({ property: entry.id }, '', `${location.pathname}#/archivo?property=${entry.id}`);
           initGalleryMode(entry.id);
         });
       }
@@ -730,7 +730,7 @@ export function buildArchiveCard(entry, scoreResult = null) {
     verBtn.className = 'archive-ver-todas-btn';
     verBtn.textContent = `Ver todas (${allPhotos.length})`;
     verBtn.addEventListener('click', () => {
-      history.pushState({ property: entry.id }, '', `${location.pathname}?property=${entry.id}`);
+      history.pushState({ property: entry.id }, '', `${location.pathname}#/archivo?property=${entry.id}`);
       initGalleryMode(entry.id);
     });
     photosSection.appendChild(verBtn);
@@ -1088,7 +1088,7 @@ export function buildArchiveCard(entry, scoreResult = null) {
   shareBtn.title = 'Compartir galería';
   shareBtn.textContent = '🔗';
   shareBtn.addEventListener('click', () => {
-    const url = `${location.origin}${location.pathname}?property=${entry.id}`;
+    const url = `${location.origin}${location.pathname}#/archivo?property=${entry.id}`;
     navigator.clipboard.writeText(url).then(() => showToast('URL copiada ✓'))
       .catch(() => showToast(url)); // fallback: show URL in toast
   });
@@ -1151,11 +1151,11 @@ export function renderGallery(entry) {
   back.className = 'btn btn-ghost gallery-back';
   back.textContent = '← Volver al archivo';
   back.addEventListener('click', () => {
-    history.replaceState(null, '', location.pathname);
     galleryView.style.display = 'none';
+    galleryView.innerHTML = '';
     document.getElementById('appHeader').style.display = '';
     document.getElementById('tabsBottom').style.display = '';
-    switchTab('archive');
+    navigateTo('#/archivo');
   });
   galleryView.appendChild(back);
 
@@ -1187,11 +1187,11 @@ export function renderGallery(entry) {
     if (fresh && [fresh.thumbnail, ...(fresh.extraPhotos || [])].filter(Boolean).length) {
       renderGallery(fresh);
     } else {
-      history.replaceState(null, '', location.pathname);
       galleryView.style.display = 'none';
+      galleryView.innerHTML = '';
       document.getElementById('appHeader').style.display = '';
       document.getElementById('tabsBottom').style.display = '';
-      switchTab('archive');
+      navigateTo('#/archivo');
     }
   };
 

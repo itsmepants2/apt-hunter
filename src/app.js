@@ -32,6 +32,7 @@ import { exportCSV } from './csv.js';
 import { getSession, onAuthStateChange, signInWithGoogle, signOut } from './auth.js';
 import { closePreview, getPreviewData, registerPhoneContactHandler } from './preview.js';
 import { saveEntry } from './db.js';
+import { initRouter, navigateTo } from './router.js';
 
 import {
   renderScorecard,
@@ -124,10 +125,7 @@ function savePreviewEntry(contactInfo = null) {
     if (urlInput) urlInput.value = '';
   }
 
-  // Land on home, scrolled to the archive list
-  switchTab('home');
-  const archiveEl = document.getElementById('homeArchive');
-  if (archiveEl) archiveEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  navigateTo('#/archivo');
 }
 
 // ── has-entries state ─────────────────────────────────────────────────────
@@ -138,19 +136,28 @@ export function updateHasEntries() {
     const cardCount = archiveList.querySelectorAll('.archive-card').length;
     homeView.classList.toggle('has-entries', cardCount > 0);
   }
+  updateHomeStatePrompt();
 }
 
-// ── Tab switching ──────────────────────────────────────────────────────────
-export function switchTab(name) {
-  document.querySelectorAll('[data-tab]').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.tab === name);
-  });
-
-  const perfilView = document.getElementById('perfilView');
-  perfilView.style.display = name === 'perfil' ? '' : 'none';
-
-  if (name === 'perfil') renderPerfil();
-  renderScorecard();
+// ── Home state-aware prompt ───────────────────────────────────────────────
+function updateHomeStatePrompt() {
+  const promptEl = document.getElementById('homeStatePrompt');
+  if (!promptEl) return;
+  const count = loadArchive().length;
+  promptEl.innerHTML = '';
+  if (count === 0) {
+    const p = document.createElement('p');
+    p.className = 'home-state-prompt-empty';
+    p.textContent = 'Toca la cámara para escanear un letrero, o pega un enlace arriba.';
+    promptEl.appendChild(p);
+  } else {
+    const link = document.createElement('button');
+    link.type = 'button';
+    link.className = 'home-state-prompt-link';
+    link.textContent = `${count} ${count === 1 ? 'propiedad' : 'propiedades'} en tu archivo →`;
+    link.addEventListener('click', () => navigateTo('#/archivo'));
+    promptEl.appendChild(link);
+  }
 }
 
 // ── Search Profile ─────────────────────────────────────────────────────────
@@ -465,9 +472,9 @@ function renderPerfil() {
     }
   });
 
-  // ── Tab switching ──
-  document.querySelectorAll('[data-tab]').forEach(btn => {
-    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  // ── Routing ──
+  document.querySelectorAll('[data-route]').forEach(btn => {
+    btn.addEventListener('click', () => navigateTo(btn.dataset.route));
   });
 
   // ── Perfil ──
@@ -577,9 +584,42 @@ function renderPerfil() {
   });
   ghTokenEl.addEventListener('keydown', e => { if (e.key === 'Enter') saveGhTokenBtn.click(); });
 
-  // ── Check for gallery mode on load ──
-  const _galleryParam = new URLSearchParams(location.search).get('property');
+  // ── Gallery deep-link normalization ──
+  // Legacy `?property=42` (no hash) gets rewritten to `#/archivo?property=42`
+  // so the route hash and the gallery overlay agree.
+  const _legacyPropertyParam = new URLSearchParams(location.search).get('property');
+  if (_legacyPropertyParam && !location.hash) {
+    history.replaceState(null, '', `${location.pathname}#/archivo?property=${_legacyPropertyParam}`);
+  }
+
+  // ── Router ──
+  initRouter({
+    onEnter: {
+      '#/casa':    () => updateHomeStatePrompt(),
+      '#/archivo': () => { renderArchive(); renderScorecard(); updateHasEntries(); },
+      '#/perfil':  () => renderPerfil(),
+    },
+  });
+
+  // ── Gallery overlay: deep-link open + popstate-close ──
+  // Property id can live in `?property=…` (legacy) or in `#/archivo?property=…`.
+  function readPropertyParam() {
+    const hashAfterQ = location.hash.split('?')[1] || '';
+    return new URLSearchParams(location.search || hashAfterQ).get('property');
+  }
+  const _galleryParam = readPropertyParam();
   if (_galleryParam) initGalleryMode(_galleryParam);
+
+  // Browser back from an open gallery removes the property param → close it.
+  window.addEventListener('popstate', () => {
+    const galleryView = document.getElementById('galleryView');
+    if (galleryView.style.display === 'block' && !readPropertyParam()) {
+      galleryView.style.display = 'none';
+      galleryView.innerHTML = '';
+      document.getElementById('appHeader').style.display = '';
+      document.getElementById('tabsBottom').style.display = '';
+    }
+  });
 
   await dbReady;
   renderArchive();

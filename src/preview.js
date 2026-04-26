@@ -88,6 +88,8 @@ function showView() {
   view.style.display = 'flex';
   savedBodyOverflow = document.body.style.overflow;
   document.body.style.overflow = 'hidden';
+  const tabsBottom = document.getElementById('tabsBottom');
+  if (tabsBottom) tabsBottom.style.display = 'none';
   // Reset scroll inside the takeover
   view.scrollTop = 0;
 }
@@ -97,6 +99,8 @@ function hideView() {
   view.style.display = 'none';
   document.body.style.overflow = savedBodyOverflow;
   savedBodyOverflow = '';
+  const tabsBottom = document.getElementById('tabsBottom');
+  if (tabsBottom) tabsBottom.style.display = '';
   // Clear DOM so a re-open starts clean
   document.getElementById('previewStatus').innerHTML = '';
   document.getElementById('previewPhotos').innerHTML = '';

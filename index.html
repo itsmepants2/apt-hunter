@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#FBF5F4">
   <title>Mis Niditos</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/styles.css?v=12">
+  <link rel="stylesheet" href="css/styles.css?v=13">
 </head>
 <body>
 <div id="appShell" style="visibility:hidden">
@@ -15,8 +15,12 @@
       <h1>🏠 Mis Niditos</h1>
       <p class="brand-tagline">One place for every place you're considering</p>
     </div>
+    <nav id="headerNav">
+      <button class="view-tab" data-route="#/casa">🏠 Casa</button>
+      <button class="view-tab" data-route="#/archivo">📋 Archivo</button>
+      <button class="view-tab" data-route="#/perfil">🎯 Perfil</button>
+    </nav>
     <div id="headerRight">
-      <button class="view-tab" id="tabPerfil" data-tab="perfil">🎯 Perfil</button>
       <div class="auth-wrap">
         <button class="btn-auth" id="btnAuth" type="button"><span class="btn-auth-icon" aria-hidden="true">👤</span><span class="btn-auth-label">Iniciar sesión</span></button>
         <div id="authMenu" role="menu" aria-hidden="true">
@@ -51,15 +55,16 @@
           </div>
         </div>
       </div>
-      <div id="homeArchive">
-        <div id="scorecard"><button class="scorecard-toggle" id="scorecardToggle">Ver resumen ▼</button><div class="scorecard-body" id="scorecardBody"></div></div>
-        <div class="archive-header">
-          <span class="archive-title" id="archiveTitle">Archivo</span>
-          <div style="display:flex;gap:6px;"><button class="btn-csv" id="btnCsv">⬇ CSV</button></div>
-        </div>
-        <div id="archiveFilters"></div>
-        <div id="archiveList"></div>
+      <div id="homeStatePrompt"></div>
+    </div>
+    <div id="archiveView">
+      <div id="scorecard"><button class="scorecard-toggle" id="scorecardToggle">Ver resumen ▼</button><div class="scorecard-body" id="scorecardBody"></div></div>
+      <div class="archive-header">
+        <span class="archive-title" id="archiveTitle">Archivo</span>
+        <div style="display:flex;gap:6px;"><button class="btn-csv" id="btnCsv">⬇ CSV</button></div>
       </div>
+      <div id="archiveFilters"></div>
+      <div id="archiveList"></div>
     </div>
     <div id="galleryView" style="display:none;"></div>
     <div id="previewView" style="display:none;">
@@ -81,7 +86,7 @@
         <button id="previewSave" class="btn btn-analyze" type="button">Guardar</button>
       </footer>
     </div>
-    <div id="perfilView" style="display:none;">
+    <div id="perfilView">
       <div class="card">
         <div class="card-label">Básicos</div>
         <div class="perfil-row">
@@ -143,7 +148,9 @@
   </div>
 </aside>
 <nav class="tabs-bottom" id="tabsBottom">
-  <button class="bottom-tab" data-tab="perfil"><span class="tab-icon">🎯</span>Perfil</button>
+  <button class="bottom-tab" data-route="#/casa"><span class="tab-icon">🏠</span>Casa</button>
+  <button class="bottom-tab" data-route="#/archivo"><span class="tab-icon">📋</span>Archivo</button>
+  <button class="bottom-tab" data-route="#/perfil"><span class="tab-icon">🎯</span>Perfil</button>
 </nav>
 <div class="toast" id="toast"></div>
 <script type="module" src="src/app.js"></script>

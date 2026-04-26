@@ -1,10 +1,11 @@
-const CACHE = 'mis-niditos-v18';
+const CACHE = 'mis-niditos-v19';
 const ASSETS = [
   '/apt-hunter/',
   '/apt-hunter/index.html',
   '/apt-hunter/css/styles.css',
   '/apt-hunter/src/app.js',
   '/apt-hunter/src/ui.js',
+  '/apt-hunter/src/router.js',
   '/apt-hunter/src/services.js',
 ];
 
