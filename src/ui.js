@@ -299,25 +299,6 @@ export function buildPhoneItem(p, waMessage, isSingle, onContact) {
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-export function setLoading(on) {
-  const btnAnalyze = document.getElementById('btnAnalyze');
-  btnAnalyze.disabled = on;
-  btnAnalyze.innerHTML = on
-    ? '<span class="spinner"></span>Analizando…'
-    : 'Analizar letrero';
-}
-
-export function showError(msg) {
-  const errorBox = document.getElementById('errorBox');
-  errorBox.textContent = msg;
-  errorBox.classList.add('visible');
-}
-
-export function hideError() {
-  const errorBox = document.getElementById('errorBox');
-  errorBox.classList.remove('visible');
-}
-
 export function showToast(msg) {
   const toastEl = document.getElementById('toast');
   toastEl.textContent = msg;

@@ -21,10 +21,9 @@ import {
   currentResult,
   currentThumbnail,
   bulkFiles,
-  analyze,
   analyzeUrl,
   handleFile,
-  clearImage,
+  resetScanState,
   analyzeImage,
   updateBulkSelection,
 } from './analyze.js';
@@ -119,7 +118,7 @@ function savePreviewEntry(contactInfo = null) {
   closePreview();
 
   if (mode === 'scan') {
-    clearImage();
+    resetScanState();
   } else {
     const urlInput = document.getElementById('urlImportInput');
     if (urlInput) urlInput.value = '';
@@ -366,11 +365,7 @@ function renderPerfil() {
   renderAuthButton(currentSession);
 
   // ── Element refs ──
-  const captureZone       = document.getElementById('captureZone');
-  const btnClear          = document.getElementById('btnClear');
-  const fileCamera        = document.getElementById('fileCamera');
   const fileUpload        = document.getElementById('fileUpload');
-  const btnAnalyze        = document.getElementById('btnAnalyze');
   const btnCsv            = document.getElementById('btnCsv');
   const ghTokenEl         = document.getElementById('ghToken');
   const saveGhTokenBtn    = document.getElementById('saveGhToken');
@@ -390,23 +385,10 @@ function renderPerfil() {
   const bulkFileList      = document.getElementById('bulkFileList');
 
   // ── Photo capture ──
-  btnClear.addEventListener('click', clearImage);
-  fileCamera.addEventListener('change', e => handleFile(e.target.files[0]));
+  // #btnCameraHero triggers the hidden #fileUpload input; the change handler
+  // routes the picked file into handleFile, which auto-opens the takeover.
   fileUpload.addEventListener('change', e => handleFile(e.target.files[0]));
   document.getElementById('btnCameraHero').addEventListener('click', () => fileUpload.click());
-
-  // Drag & drop on capture zone
-  captureZone.addEventListener('dragover', e => { e.preventDefault(); captureZone.style.borderColor = '#2C3A4A'; });
-  captureZone.addEventListener('dragleave', () => { captureZone.style.borderColor = ''; });
-  captureZone.addEventListener('drop', e => {
-    e.preventDefault();
-    captureZone.style.borderColor = '';
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  });
-
-  // ── Analyze ──
-  btnAnalyze.addEventListener('click', analyze);
 
   // ── URL import ──
   btnAnalyzeUrl.addEventListener('click', analyzeUrl);

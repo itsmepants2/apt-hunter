@@ -6,9 +6,6 @@ import {
 } from './services.js';
 
 import {
-  setLoading,
-  showError,
-  hideError,
   generateThumbnail,
   htmlToText,
 } from './ui.js';
@@ -110,10 +107,7 @@ function scanResultToFields(r) {
 }
 
 export async function analyze() {
-  if (!imageBase64) return showError('Primero sube o toma una foto.');
-
-  setLoading(true);
-  hideError();
+  if (!imageBase64) return;
 
   const dataUrl = `data:${imageMime};base64,${imageBase64}`;
   const reqId = openPreview('scan', { status: 'extracting', photos: [dataUrl] });
@@ -132,8 +126,6 @@ export async function analyze() {
       ? 'No se pudo parsear la respuesta de la API. Intenta de nuevo.'
       : err.message;
     updatePreview(reqId, { status: 'error', error: msg });
-  } finally {
-    setLoading(false);
   }
 }
 
@@ -223,57 +215,33 @@ export async function analyzeUrl() {
 }
 
 // ── File handling ──────────────────────────────────────────────────────────
+// Picking a file auto-opens the takeover and triggers analyze().
+// Non-image selections surface as a takeover error (the only pre-takeover
+// validation that exists post-2C — the legacy #errorBox is gone).
 export function handleFile(file) {
-  const captureZone = document.getElementById('captureZone');
-  const btnClear    = document.getElementById('btnClear');
-  const btnAnalyze  = document.getElementById('btnAnalyze');
-  const fileCamera  = document.getElementById('fileCamera');
-  const fileUpload  = document.getElementById('fileUpload');
-
-  if (!file || !file.type.startsWith('image/')) return showError('Selecciona una imagen válida.');
+  if (!file || !file.type.startsWith('image/')) {
+    const reqId = openPreview('scan', { photos: [] });
+    updatePreview(reqId, { status: 'error', error: 'El archivo seleccionado no es una imagen.' });
+    return;
+  }
   imageMime = file.type;
   const reader = new FileReader();
   reader.onload = ev => {
     const dataUrl = ev.target.result;
     imageBase64 = dataUrl.split(',')[1];
     generateThumbnail(dataUrl).then(thumb => { currentThumbnail = thumb; });
-    // Show preview
-    captureZone.innerHTML = `
-      <img src="${dataUrl}" alt="preview">
-      <div class="capture-overlay">
-        <div class="capture-icon">🔄</div>
-        <div style="color:#fff;font-size:0.85rem;">Cambiar foto</div>
-      </div>`;
-    captureZone.classList.add('has-image');
-    btnClear.style.display = '';
-    btnAnalyze.disabled = false;
-    hideError();
+    // Reset file inputs so the same file can be re-selected
+    const fileUpload = document.getElementById('fileUpload');
+    if (fileUpload) fileUpload.value = '';
+    analyze();
   };
   reader.readAsDataURL(file);
-  // Reset file inputs so same file can be reselected
-  fileCamera.value = '';
-  fileUpload.value = '';
 }
 
-export function clearImage() {
-  const captureZone = document.getElementById('captureZone');
-  const btnClear    = document.getElementById('btnClear');
-  const btnAnalyze  = document.getElementById('btnAnalyze');
-
+export function resetScanState() {
   imageBase64 = null;
+  imageMime = 'image/jpeg';
   currentThumbnail = null;
-  currentResult = null;
-  captureZone.innerHTML = `
-    <div class="capture-icon">📷</div>
-    <div class="capture-hint">Toca para subir foto</div>
-    <div class="capture-overlay">
-      <div class="capture-icon">🔄</div>
-      <div style="color:#fff;font-size:0.85rem;">Cambiar foto</div>
-    </div>`;
-  captureZone.classList.remove('has-image');
-  btnClear.style.display = 'none';
-  btnAnalyze.disabled = true;
-  hideError();
 }
 
 // ── Bulk upload helpers ─────────────────────────────────────────────────────

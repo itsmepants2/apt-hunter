@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#FBF5F4">
   <title>Mis Niditos</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="css/styles.css?v=11">
+  <link rel="stylesheet" href="css/styles.css?v=12">
   <style>
     #authView {
       display: none;
@@ -78,23 +78,7 @@
           <input type="url" id="urlImportInput" placeholder="https://inmuebles24.com/…">
           <button class="btn btn-ghost" id="btnAnalyzeUrl">Analizar</button>
           <button class="btn-camera-hero" id="btnCameraHero" type="button" title="Subir foto">📷</button>
-        </div>
-        <div id="uploadCol">
-          <div class="card">
-            <div class="card-label">Foto del letrero</div>
-            <label class="capture-label" id="captureLabel"><input type="file" id="fileUpload" accept="image/*">
-              <div class="capture-zone" id="captureZone">
-                <div class="capture-icon">📷</div><div class="capture-hint">Toca para subir foto</div>
-                <div class="capture-overlay"><div class="capture-icon">🔄</div><div style="color:#fff;font-size:0.85rem;">Cambiar foto</div></div>
-              </div>
-            </label>
-            <div class="btn-row" style="margin-top:10px;">
-              <label class="btn btn-ghost" style="cursor:pointer;"><input type="file" id="fileCamera" accept="image/*" capture="environment" style="display:none;">📷 Cámara</label>
-              <button class="btn btn-ghost" id="btnClear" style="display:none;">✕ Limpiar</button>
-            </div>
-          </div>
-          <button class="btn btn-analyze" id="btnAnalyze" disabled>Analizar letrero</button>
-          <div class="error-box" id="errorBox"></div>
+          <input type="file" id="fileUpload" accept="image/*" style="display:none;">
         </div>
         <div class="card" id="bulkCard" style="margin-top:16px;">
           <div class="card-label">Carga masiva</div>

@@ -105,64 +105,6 @@
       border: 1px solid var(--border);
     }
 
-    .capture-zone {
-      position: relative;
-      border: 2px dashed var(--border);
-      border-radius: var(--radius);
-      background: var(--surface2);
-      min-height: 200px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      cursor: pointer;
-      transition: border-color 0.2s;
-      overflow: hidden;
-    }
-
-    .capture-zone:hover { border-color: var(--accent); }
-    .capture-zone.has-image { border-style: solid; }
-
-    .capture-zone img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      max-height: 360px;
-    }
-
-    .capture-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(0,0,0,0.55);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-
-    .capture-zone.has-image:hover .capture-overlay { opacity: 1; }
-
-    .capture-icon {
-      font-size: 2.5rem;
-      line-height: 1;
-    }
-
-    .capture-hint {
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      text-align: center;
-    }
-
-    .btn-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
     .btn-analyze {
       background: var(--accent);
       color: #fff;
@@ -346,30 +288,6 @@
 
     .cc-confirm-btn:hover { background: var(--green-dark); }
     .cc-confirm-btn:active { transform: scale(0.97); }
-
-    .error-box {
-      background: var(--error-bg);
-      border: 1px solid var(--error-border);
-      border-radius: 8px;
-      color: var(--error);
-      padding: 12px;
-      font-size: 0.88rem;
-      display: none;
-    }
-
-    .error-box.visible { display: block; }
-
-    /* Hidden file inputs */
-    #fileCamera, #fileUpload { display: none; }
-
-    /* Label wrapper so native click reaches the input without JS */
-    .capture-label {
-      display: block;
-      cursor: pointer;
-    }
-    .capture-label input[type="file"] {
-      display: none;
-    }
 
     /* Toast */
     .toast {
@@ -1733,9 +1651,6 @@
       .scorecard-body { display: none; }
       .scorecard-body.expanded { display: grid; }
 
-      /* Make the upload zone taller and more dominant */
-      .capture-zone { min-height: 260px; }
-
       /* Bigger analyze button */
       .btn-analyze { padding: 16px; font-size: 1.05rem; }
 
@@ -1929,8 +1844,7 @@
       width: 100%;
     }
 
-    /* Always hide the old upload zone and bulk card — replaced by hero search row */
-    #uploadCol { display: none; }
+    /* Bulk card hidden on home — replaced by hero search row */
     #bulkCard  { display: none; }
 
     /* ── homeInput: hero / zero state ─────────────────────────────────────── */
