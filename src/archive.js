@@ -7,6 +7,7 @@ import { gistPull, getGhToken, getGistId } from './sync.js';
 import { showToast, renderArchive, renderScorecard, renderGallery } from './ui.js';
 import { loadEntries, saveEntry, deleteEntry } from './db.js';
 import { getSession } from './auth.js';
+import { store } from './store.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────
 export const STATUSES = [
