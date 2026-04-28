@@ -114,7 +114,6 @@ function savePreviewEntry(contactInfo = null) {
   renderScorecard();
   renderArchive();
   updateHasEntries();
-  gistPush();
   showToast('💾 Guardado ✓ — recarga para ver el archivo');
 
   closePreview();
@@ -562,7 +561,6 @@ function backfillLocalEntryIds() {
     });
     const profile = { recamarasMin, banosMin, estacionamientoMin, precioMax, tamanoMin, coloniasPreferidas, amenidades };
     store.set('searchProfile', JSON.stringify(profile));
-    gistPush();
     renderArchive();
     showToast('Perfil guardado ✓');
   });
@@ -655,7 +653,6 @@ function backfillLocalEntryIds() {
   renderScorecard();
   updateHasEntries();
   appShell.style.visibility = 'visible';
-  gistPull();
 
   // ── PWA Service Worker ──
   if ('serviceWorker' in navigator) {
