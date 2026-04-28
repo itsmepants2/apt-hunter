@@ -2,7 +2,7 @@
 
 Living state for Apt Hunter. `CLAUDE.md` is the durable spec; this file is the running diary.
 
-**Last updated:** 2026-04-27 (at commit e3131c0)
+**Last updated:** 2026-04-27 (at commit b6bcc59)
 
 ## Current project state
 
@@ -18,6 +18,7 @@ Living state for Apt Hunter. `CLAUDE.md` is the durable spec; this file is the r
 
 **Not started.** No code path migrates localStorage entries into Supabase on sign-in.
 
+- **Prerequisite landed (b6bcc59):** `raw_extraction` JSON sidecar round-trip in `src/db.js`. Fields without dedicated Supabase columns — `parking`, `streetAddress`, `sourceUrl`, `whatsappMessage`, `type`, `extras`, `allPhones`, `price` — now survive a save + reload from Supabase. Legacy rows where `raw_extraction` is `null` fall through to the previous defaults; behavior unchanged for them.
 - `onAuthStateChange` in `src/app.js:343` only re-renders the archive when a session arrives.
 - `mergeArchives` in `src/archive.js` is used by `src/sync.js` for Gist sync, not for sign-in migration.
 - Persistence today is dual-path: unauthed → localStorage only; authed → both localStorage and Supabase via `saveEntry()` in `src/db.js`.
@@ -55,6 +56,8 @@ Note: SW cache bumps don't take effect until old controllers terminate. After a 
 ## Recent commits
 
 ```
+b6bcc59 Preserve Supabase sidecar fields (raw_extraction JSON round-trip in src/db.js)
+596a2e7 Populate project context (this file)
 e3131c0 docs: fix CLAUDE.md formatting, add CONTEXT.md stub, correct commands and file map
 a9e7762 Add Claude Code project instructions
 d4929d3 fix: import store in archive.js so loadArchive can read localStorage
