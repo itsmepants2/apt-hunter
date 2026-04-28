@@ -2,7 +2,7 @@
 
 Living state for Apt Hunter. `CLAUDE.md` is the durable spec; this file is the running diary.
 
-**Last updated:** 2026-04-27 (at commit 49b937d)
+**Last updated:** 2026-04-27 (at commit d00c623)
 
 ## Current project state
 
@@ -16,14 +16,29 @@ Living state for Apt Hunter. `CLAUDE.md` is the durable spec; this file is the r
 
 ## Auth-migration step status
 
-**Not started.** No code path migrates localStorage entries into Supabase on sign-in.
+**Implemented in d00c623.** Silent localStorage → Supabase migration runs after sign-in or session restore via `migrateLocalToSupabase()` in `src/archive.js`. Both render paths in `src/app.js` (the `onAuthStateChange` SIGN_IN branch and the end-of-init backstop, gated on `currentSession`) call it; a once-per-page-load promise cache ensures it runs exactly once.
 
-- **Prerequisite landed (49b937d):** local entry ids are now `crypto.randomUUID()` at creation in `saveToArchiveDirect` and both `savePreviewEntry` branches. A one-shot idempotent backfill in `src/app.js` `init()` (`backfillLocalEntryIds`) rewrites any pre-fix `Date.now() + Math.random()` ids in `apt_hunter_archive` to UUIDs on next page load. `saveEntry`'s UUID-shape IIFE at `src/db.js:63` stays as a defensive guard. Side effect: edits no longer create duplicate Supabase rows, and `deleteEntry` actually removes the Supabase row. Pre-existing orphan rows from prior buggy saves are not cleaned up.
-- **Prerequisite landed (b6bcc59):** `raw_extraction` JSON sidecar round-trip in `src/db.js`. Fields without dedicated Supabase columns — `parking`, `streetAddress`, `sourceUrl`, `whatsappMessage`, `type`, `extras`, `allPhones`, `price` — now survive a save + reload from Supabase. Legacy rows where `raw_extraction` is `null` fall through to the previous defaults; behavior unchanged for them.
-- `onAuthStateChange` in `src/app.js:343` only re-renders the archive when a session arrives.
-- `mergeArchives` in `src/archive.js` is used by `src/sync.js` for Gist sync, not for sign-in migration.
-- Persistence today is dual-path: unauthed → localStorage only; authed → both localStorage and Supabase via `saveEntry()` in `src/db.js`.
-- Planned (per CLAUDE.md): silent merge on sign-in, with optional one-time confirmation toast. No "found N properties, import?" prompt.
+Behaviour:
+
+- Reads the local archive; short-circuits when empty.
+- Fetches remote via `loadEntries()`; skips any local entry whose UUID is already on Supabase.
+- Upserts local-only entries via `saveEntry()` — stable UUIDs (49b937d) + `raw_extraction` sidecar (b6bcc59) make the upsert lossless and idempotent.
+- Merges local + remote with `mergeArchives` (local-wins on id collision) and writes the union to `localStorage`. Updates `_dbCache` to match.
+- Toast `Archivo sincronizado ✓` fires only when `migrated > 0`. Silent for already-in-sync, fresh-device-pull-down, and unauthenticated cases. Failed upserts stay in localStorage and retry on the next sign-in; no error toast.
+
+Deferred / not done:
+
+- Cleanup of pre-49b937d orphan Supabase rows (rows created by past buggy saves before stable UUIDs landed). They appear as duplicates in the merged view; manual cleanup via the Supabase dashboard is the path.
+
+Prerequisites still load-bearing:
+
+- **49b937d** (UUID stability): `crypto.randomUUID()` at creation in `saveToArchiveDirect` and both `savePreviewEntry` branches, plus an idempotent backfill in `src/app.js init()` for pre-fix float ids. Stable UUIDs are what make `saveEntry`'s upsert (`onConflict: 'id'`) idempotent across migration re-runs.
+- **b6bcc59** (sidecar): `raw_extraction` JSON column in `src/db.js` round-trips fields without dedicated Supabase columns — `parking`, `streetAddress`, `sourceUrl`, `whatsappMessage`, `type`, `extras`, `allPhones`, `price`.
+
+Persistence model post-migration:
+
+- Unauthenticated: localStorage only.
+- Authenticated: localStorage + Supabase via `saveEntry()`. Sign-in migrates pre-auth local-only entries up and pulls remote-only entries down via the merged-view write.
 
 ## Open architectural questions
 
@@ -50,13 +65,15 @@ Needs Steve confirmation on which (if any) are still live.
 
 ## Service worker cache version
 
-**`mis-niditos-v21`** — verified from `sw.js:1`. Bumped from v20 in commit 49b937d alongside the UUID stability fix because `app.js` is in the precache list.
+**`mis-niditos-v22`** — verified from `sw.js:1`. Bumped from v21 in commit d00c623 alongside the silent migration because `app.js` is in the precache list.
 
 Note: SW cache bumps don't take effect until old controllers terminate. After a bump, close all Apt Hunter tabs (especially on iOS Safari) before re-verifying.
 
 ## Recent commits
 
 ```
+d00c623 Add silent Supabase archive migration (migrateLocalToSupabase in src/archive.js, called from both render paths; SW cache v22)
+27e0823 Update context after UUID stability fix
 49b937d Stabilize local entry ids (crypto.randomUUID at creation + idempotent backfill in app.js init; SW cache v21)
 7cc394b Update context after sidecar fix
 b6bcc59 Preserve Supabase sidecar fields (raw_extraction JSON round-trip in src/db.js)
@@ -80,18 +97,56 @@ Themes since the last reset: preview-takeover rollout (2A/2B/2C), hash routing (
 
 ## Suggested next task
 
-Design the silent localStorage → Supabase migration before implementing it.
+Live-site verification of the silent localStorage → Supabase migration landed in d00c623. The change touches auth, save paths, localStorage, Supabase, service worker, and module loading — every category CLAUDE.md flags as requiring phone verification on the deployed GitHub Pages site. Static checks (`node --check`, syntax pass) and preview-server runs cannot exercise the auth-gated round trip because Supabase OAuth doesn't complete on localhost.
 
-Decisions to surface for Steve before any code is written:
-- Conflict resolution: when an entry exists in both localStorage and Supabase with the same id but different fields, which wins? Last-write-wins by `updatedAt`, local-wins, remote-wins, or per-field merge?
-- Entry identity: are localStorage entry ids stable enough to dedupe against Supabase, or does merge need a content fingerprint?
-- Trigger point: run on every `SIGNED_IN` event, only on the first sign-in per device, or only when `_dbCache` is empty?
-- Failure mode: if the Supabase write fails partway, do we retry, leave localStorage as the source of truth, or surface an error?
-- Toast behavior: confirmation toast on every successful migration, only on first migration per device, or never (silent)?
-- Reuse vs. new helper: does `mergeArchives` in `src/archive.js` (currently used by Gist sync) fit the sign-in shape, or is a separate helper cleaner?
+The verification needs to confirm:
 
-Deliverable for the design step: a short doc (or addendum here) capturing the chosen answers, then a follow-up prompt to implement.
+- SW v22 is actually serving the new code (iOS Safari can hold old controllers across cache bumps).
+- Fresh sign-in with local-only entries uploads them, fires the toast, and produces matching Supabase rows with `raw_extraction` sidecar fields populated.
+- Returning users with already-synced data see no re-toast.
+- A second device pulls remote entries down silently.
+- Edits after migration update existing Supabase rows in place (no new duplicates).
+- Pre-49b937d orphan rows are not touched.
+
+If any check fails, the failure mode points at which prerequisite is misbehaving: SW v22 cache (`sw.js`), UUID stability (49b937d), `raw_extraction` sidecar (b6bcc59), or migration logic (d00c623). Diagnose before patching, per CLAUDE.md.
 
 ## Suggested next Claude Code prompt
 
-> Read-only design pass for the silent localStorage → Supabase migration on sign-in. **Do not implement anything; do not edit any source files.** Read `src/app.js` (especially `onAuthStateChange` around line 343), `src/archive.js` (loadArchive, mergeArchives, _dbCache, dbReady), `src/db.js` (saveEntry), `src/sync.js` (how mergeArchives is currently consumed), and `src/auth.js`. Then produce a short design proposal that answers each open question in CONTEXT.md's Suggested next task: conflict resolution, entry identity, trigger point, failure mode, toast behavior, and whether to reuse `mergeArchives` or add a new helper. For each answer, cite the file/line evidence behind your recommendation, name the alternative you considered, and flag anything that needs my decision before code is written. Output the proposal as a reply in this conversation — do not write it to a new file unless I ask.
+> Walk me through live-site verification of the silent migration landed in d00c623. **Do not edit any source files. Do not run any code-changing tools.** Read `CONTEXT.md` and `CLAUDE.md` for context, then guide me through the checklist below. I'll report what I see on the phone after each step; you interpret results and flag issues. If a step fails, hypothesise the most likely cause from the prerequisite chain (SW v22 cache, UUID stability in 49b937d, `raw_extraction` sidecar in b6bcc59, or migration logic in d00c623), but do not patch — we diagnose first.
+>
+> **Pre-flight (SW)**
+>
+> 1. Close all Apt Hunter tabs. Open `https://itsmepants2.github.io/apt-hunter`. Web Inspector → Application → Service Workers → confirm the active worker reports cache `mis-niditos-v22`.
+>
+> **Fresh sign-in (canonical migration case)**
+>
+> 2. While **signed out**, save 2–3 entries via sign-scan and URL import. Confirm they appear in the archive UI.
+> 3. Inspect localStorage `apt_hunter_archive`. Confirm every `id` is a UUID string. Note the count and ids.
+> 4. Open the Supabase `entries` dashboard. Note any pre-existing rows for this account.
+> 5. Click `#btnAuth`, complete Google sign-in.
+> 6. **Expected:** toast `Archivo sincronizado ✓`. Archive UI shows the same entries.
+> 7. Reload the Supabase dashboard. Confirm new rows match the local UUIDs from step 3, with `raw_extraction` populated — visible fields: `parking`, `streetAddress`, `sourceUrl`, `whatsappMessage`, `type`, `extras`, `allPhones`, `price`.
+> 8. Reload the page. **No re-toast.** Archive renders the same entries.
+>
+> **Returning user (already in sync)**
+>
+> 9. Sign out, then sign back in. **No toast.** Archive renders normally.
+>
+> **Cross-device pull**
+>
+> 10. On a second device — or after clearing localStorage on the same one — sign in. localStorage is populated from Supabase via the merged-view write. Archive shows the entries from step 2. **No toast** (no upload happened, only a pull-down).
+>
+> **Edit after migration (UUID stability sanity)**
+>
+> 11. Edit one field on a migrated entry; blur. Reload the Supabase dashboard. Confirm the existing row was updated in place — no new duplicate row.
+>
+> **Edge cases**
+>
+> 12. Empty local + empty Supabase: sign in fresh. No errors, no toast.
+> 13. Network blip during migration: simulate offline mid-flow if possible. `saveEntry` returns null for failed entries; they stay in localStorage with their UUIDs. Re-sign-in retries them silently. No error toast.
+>
+> **Pre-49b937d orphans (do not delete)**
+>
+> 14. Confirm any pre-existing duplicate rows in Supabase remain untouched. They appear as duplicate cards in the merged view; cleanup is the deferred path.
+>
+> Report results step-by-step. Highlight any unexpected behavior.
