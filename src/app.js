@@ -57,7 +57,7 @@ function savePreviewEntry(contactInfo = null) {
   if (mode === 'scan') {
     const r = currentResult || {};
     entry = {
-      id: Date.now() + Math.random(),
+      id: crypto.randomUUID(),
       date: new Date().toISOString(),
       type:             r.type    || null,
       price:            r.price   || null,
@@ -81,7 +81,7 @@ function savePreviewEntry(contactInfo = null) {
     };
   } else {
     entry = {
-      id: Date.now() + Math.random(),
+      id: crypto.randomUUID(),
       date: new Date().toISOString(),
       thumbnail:        visiblePhotos[0] || null,
       address:          fields.neighborhood || null,
@@ -251,7 +251,29 @@ function renderPerfil() {
 }
 
 // ── Init (runs after DOM ready — module scripts are deferred by default) ────
+// One-shot backfill: pre-fix entries used `Date.now() + Math.random()` ids that
+// don't survive `saveEntry`'s UUID-shape check, so each save minted a new
+// Supabase row. Rewriting non-UUID ids in-place stabilises future upserts.
+function backfillLocalEntryIds() {
+  const raw = store.get('apt_hunter_archive');
+  if (!raw) return;
+  let archive;
+  try { archive = JSON.parse(raw); } catch { return; }
+  if (!Array.isArray(archive)) return;
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  let mutated = false;
+  for (const entry of archive) {
+    if (!UUID_RE.test(String(entry.id))) {
+      entry.id = crypto.randomUUID();
+      mutated = true;
+    }
+  }
+  if (mutated) store.set('apt_hunter_archive', JSON.stringify(archive));
+}
+
 (async function init() {
+  backfillLocalEntryIds();
+
   // ── Auth gate ──
   const appShell   = document.getElementById('appShell');
   const appHeader  = document.getElementById('appHeader');

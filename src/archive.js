@@ -55,7 +55,7 @@ export function loadArchive() {
 export function saveToArchiveDirect(result, thumbnail) {
   const archive = loadArchive();
   const entry = {
-    id: Date.now() + Math.random(),
+    id: crypto.randomUUID(),
     date: new Date().toISOString(),
     thumbnail:        thumbnail || null,
     address:          result.address   || null,
