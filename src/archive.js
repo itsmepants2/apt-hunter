@@ -129,6 +129,37 @@ export function mergeArchives(local, remote) {
   return Object.values(byId).sort((a, b) => new Date(b.date) - new Date(a.date));
 }
 
+// ── Silent localStorage → Supabase migration ──────────────────────────────
+// Two render paths in app.js (auth-state handler + end-of-init backstop) both
+// call this; the cached promise makes it run once per page load. Subsequent
+// callers resolve to 0 so they don't double-toast.
+let _migrationPromise = null;
+export function migrateLocalToSupabase() {
+  if (_migrationPromise) return _migrationPromise.then(() => 0);
+  _migrationPromise = (async () => {
+    const raw = store.get('apt_hunter_archive');
+    let local;
+    try { local = raw ? JSON.parse(raw) : []; } catch { return 0; }
+    if (!Array.isArray(local) || local.length === 0) return 0;
+
+    const remote = await loadEntries();
+    const remoteIds = new Set(remote.map(e => e.id));
+
+    let migrated = 0;
+    for (const entry of local) {
+      if (remoteIds.has(entry.id)) continue;
+      const ok = await saveEntry(entry);
+      if (ok) migrated++;
+    }
+
+    const merged = mergeArchives(local, remote);
+    store.set('apt_hunter_archive', JSON.stringify(merged));
+    _dbCache = merged;
+    return migrated;
+  })();
+  return _migrationPromise;
+}
+
 // ── Gallery mode ───────────────────────────────────────────────────────────
 export async function initGalleryMode(propertyId) {
   const galleryView = document.getElementById('galleryView');

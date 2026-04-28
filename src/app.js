@@ -6,6 +6,7 @@ import {
   readFileAsDataUrl,
   saveToArchiveDirect,
   dbReady,
+  migrateLocalToSupabase,
 } from './archive.js';
 
 import {
@@ -368,6 +369,8 @@ function backfillLocalEntryIds() {
     if (session) {
       if (appShell.style.visibility !== 'visible') {
         await dbReady;
+        const migrated = await migrateLocalToSupabase();
+        if (migrated > 0) showToast('Archivo sincronizado ✓');
         renderArchive();
         renderScorecard();
         updateHasEntries();
@@ -644,6 +647,10 @@ function backfillLocalEntryIds() {
   });
 
   await dbReady;
+  if (currentSession) {
+    const migrated = await migrateLocalToSupabase();
+    if (migrated > 0) showToast('Archivo sincronizado ✓');
+  }
   renderArchive();
   renderScorecard();
   updateHasEntries();
