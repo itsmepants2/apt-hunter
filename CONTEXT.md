@@ -2,7 +2,7 @@
 
 Living state for Apt Hunter. `CLAUDE.md` is the durable spec; this file is the running diary.
 
-**Last updated:** 2026-04-27 (at commit b6bcc59)
+**Last updated:** 2026-04-27 (at commit 49b937d)
 
 ## Current project state
 
@@ -18,6 +18,7 @@ Living state for Apt Hunter. `CLAUDE.md` is the durable spec; this file is the r
 
 **Not started.** No code path migrates localStorage entries into Supabase on sign-in.
 
+- **Prerequisite landed (49b937d):** local entry ids are now `crypto.randomUUID()` at creation in `saveToArchiveDirect` and both `savePreviewEntry` branches. A one-shot idempotent backfill in `src/app.js` `init()` (`backfillLocalEntryIds`) rewrites any pre-fix `Date.now() + Math.random()` ids in `apt_hunter_archive` to UUIDs on next page load. `saveEntry`'s UUID-shape IIFE at `src/db.js:63` stays as a defensive guard. Side effect: edits no longer create duplicate Supabase rows, and `deleteEntry` actually removes the Supabase row. Pre-existing orphan rows from prior buggy saves are not cleaned up.
 - **Prerequisite landed (b6bcc59):** `raw_extraction` JSON sidecar round-trip in `src/db.js`. Fields without dedicated Supabase columns — `parking`, `streetAddress`, `sourceUrl`, `whatsappMessage`, `type`, `extras`, `allPhones`, `price` — now survive a save + reload from Supabase. Legacy rows where `raw_extraction` is `null` fall through to the previous defaults; behavior unchanged for them.
 - `onAuthStateChange` in `src/app.js:343` only re-renders the archive when a session arrives.
 - `mergeArchives` in `src/archive.js` is used by `src/sync.js` for Gist sync, not for sign-in migration.
@@ -49,13 +50,15 @@ Needs Steve confirmation on which (if any) are still live.
 
 ## Service worker cache version
 
-**`mis-niditos-v20`** — verified from `sw.js:1`.
+**`mis-niditos-v21`** — verified from `sw.js:1`. Bumped from v20 in commit 49b937d alongside the UUID stability fix because `app.js` is in the precache list.
 
 Note: SW cache bumps don't take effect until old controllers terminate. After a bump, close all Apt Hunter tabs (especially on iOS Safari) before re-verifying.
 
 ## Recent commits
 
 ```
+49b937d Stabilize local entry ids (crypto.randomUUID at creation + idempotent backfill in app.js init; SW cache v21)
+7cc394b Update context after sidecar fix
 b6bcc59 Preserve Supabase sidecar fields (raw_extraction JSON round-trip in src/db.js)
 596a2e7 Populate project context (this file)
 e3131c0 docs: fix CLAUDE.md formatting, add CONTEXT.md stub, correct commands and file map
