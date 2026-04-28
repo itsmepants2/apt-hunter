@@ -19,6 +19,10 @@ export async function loadEntries() {
 }
 
 export function normalizeEntry(row) {
+  // Sidecar: fields without dedicated columns are round-tripped via raw_extraction JSON.
+  const sidecar = (row.raw_extraction && typeof row.raw_extraction === 'object' && !Array.isArray(row.raw_extraction))
+    ? row.raw_extraction
+    : {};
   return {
     id: row.id,
     date: row.created_at,
@@ -40,12 +44,14 @@ export function normalizeEntry(row) {
     amenities: row.amenities || null,
     extraPhotos: row.photos || [],
     thumbnail: row.photos?.[0] || null,
-    raw: row.raw_extraction || null,
-    allPhones: row.contact_phone ? [row.contact_phone] : [],
-    whatsappMessage: '',
-    type: null,
-    extras: null,
-    parking: null,
+    allPhones:       sidecar.allPhones       ?? (row.contact_phone ? [row.contact_phone] : []),
+    whatsappMessage: sidecar.whatsappMessage ?? '',
+    type:            sidecar.type            ?? null,
+    extras:          sidecar.extras          ?? null,
+    parking:         sidecar.parking         ?? null,
+    streetAddress:   sidecar.streetAddress   ?? null,
+    sourceUrl:       sidecar.sourceUrl       ?? null,
+    price:           sidecar.price           ?? null,
   };
 }
 
@@ -72,7 +78,17 @@ export async function saveEntry(entry) {
       score_breakdown: entry.scoreBreakdown  || null,
       amenities:       entry.amenities       || null,
       photos:          entry.extraPhotos     || null,
-      raw_extraction:  entry.raw             || null,
+      // Sidecar: fields without dedicated columns are JSON-packed here so they round-trip.
+      raw_extraction: {
+        parking:         entry.parking         ?? null,
+        streetAddress:   entry.streetAddress   ?? null,
+        sourceUrl:       entry.sourceUrl       ?? null,
+        whatsappMessage: entry.whatsappMessage ?? '',
+        type:            entry.type            ?? null,
+        extras:          entry.extras          ?? null,
+        allPhones:       entry.allPhones       ?? null,
+        price:           entry.price           ?? null,
+      },
     };
     const { data, error } = await supabase
       .from('entries')
