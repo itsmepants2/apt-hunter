@@ -1667,6 +1667,43 @@
 
       /* Status stepper small screen */
       .status-step { font-size: 0.62rem; padding: 4px 1px; }
+
+      /* ── Archive cards: mobile reflow ───────────────────────────────────────── */
+      /* Headline overlay: shrink and tighten padding; inputs are single-line
+         so use ellipsis (line-clamp doesn't apply) to keep long headlines
+         from spilling past the card edge or crashing into the photo */
+      input[type="text"].archive-headline {
+        font-size: 1.2rem;
+        line-height: 1.15;
+        padding: 10px 12px 6px;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+
+      /* Stats bar: let the price column sit on row 1, stats + score wrap to row 2 */
+      .card-stats-bar {
+        flex-wrap: wrap;
+        gap: 8px 12px;
+        padding: 10px 12px;
+      }
+      .stats-bar-right {
+        flex: 1 1 100%;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .stats-grid { gap: 6px 14px; }
+      .stat-value { font-size: 1.1rem; }
+
+      /* Score badge: shrink so it doesn't force overflow */
+      .stats-score { padding: 6px 10px; }
+      .stats-score-number { font-size: 2rem; }
+
+      /* Placeholder emoji: scale with the (full-width on mobile) media box */
+      .archive-photo-placeholder { font-size: clamp(3rem, 14vw, 5rem); }
+
+      /* Breathing room above the fixed bottom nav */
+      #archiveView { padding-bottom: 24px; }
     }
 
     /* ── Desktop layout (>= 768px) ────────────────────────────────────────────── */
