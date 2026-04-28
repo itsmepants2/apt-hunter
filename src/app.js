@@ -7,6 +7,7 @@ import {
   saveToArchiveDirect,
   dbReady,
   migrateLocalToSupabase,
+  clearDbCache,
 } from './archive.js';
 
 import {
@@ -376,7 +377,10 @@ function backfillLocalEntryIds() {
         appShell.style.visibility = 'visible';
       }
     } else if (event === 'SIGNED_OUT') {
+      clearDbCache();
       clearArchiveView();
+      renderArchive();
+      updateHasEntries();
     }
   });
 

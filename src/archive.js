@@ -33,6 +33,12 @@ export const dbReady = (async () => {
   if (rows.length > 0) _dbCache = rows;
 })();
 
+// Drop the in-memory shadow of Supabase rows. Called on sign-out so loadArchive
+// falls back to localStorage instead of returning the stale signed-in view.
+export function clearDbCache() {
+  _dbCache = null;
+}
+
 // ── Exchange rate: MXN → USD ──────────────────────────────────────────────
 export let mxnToUsdRate = null;
 fetch('https://apt-hunter-proxy.stevebryant.workers.dev/fx')
