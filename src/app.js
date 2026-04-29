@@ -5,9 +5,11 @@ import {
   initGalleryMode,
   readFileAsDataUrl,
   saveToArchiveDirect,
-  dbReady,
   migrateLocalToSupabase,
   clearDbCache,
+  refreshDbCache,
+  resetMigrationPromise,
+  pruneSyncedFromLocal,
 } from './archive.js';
 
 import {
@@ -50,7 +52,7 @@ import {
 // currentResult from analyze.js with the takeover fields and (for WA-click
 // saves) the contact info. The STATUSES mismatch on `status: 'spotted'`
 // is a known issue tracked separately.
-function savePreviewEntry(contactInfo = null) {
+async function savePreviewEntry(contactInfo = null) {
   const data = getPreviewData();
   if (!data) return;
   const { mode, sourceUrl, fields, visiblePhotos } = data;
@@ -80,6 +82,7 @@ function savePreviewEntry(contactInfo = null) {
       status:           'spotted',
       contactedNumber:  contactInfo?.contactedNumber  || null,
       contactedDisplay: contactInfo?.contactedDisplay || null,
+      pendingSync:      true,
     };
   } else {
     entry = {
@@ -105,13 +108,18 @@ function savePreviewEntry(contactInfo = null) {
       amenities:        fields.amenities,
       extraPhotos:      visiblePhotos.slice(1),
       sourceUrl:        sourceUrl,
+      pendingSync:      true,
     };
   }
 
   const archive = loadArchive();
   archive.unshift(entry);
   store.set('apt_hunter_archive', JSON.stringify(archive));
-  saveEntry(entry);
+  const ok = await saveEntry(entry);
+  if (ok) {
+    delete entry.pendingSync;
+    store.set('apt_hunter_archive', JSON.stringify(archive));
+  }
   renderScorecard();
   renderArchive();
   updateHasEntries();
@@ -363,21 +371,30 @@ function backfillLocalEntryIds() {
     await signOut();
   });
 
+  // Init backstop owns the cold-start render. The auth listener handles
+  // mid-session events (sign-in / sign-out after first paint). Until the
+  // backstop has run once we skip the listener so cold-start work isn't
+  // duplicated.
+  let _initBackstopRun = false;
+
   onAuthStateChange(async (event, session) => {
     currentSession = session;
     renderAuthButton(session);
-    if (session) {
-      if (appShell.style.visibility !== 'visible') {
-        await dbReady;
-        const migrated = await migrateLocalToSupabase();
-        if (migrated > 0) showToast('Archivo sincronizado ✓');
-        renderArchive();
-        renderScorecard();
-        updateHasEntries();
-        appShell.style.visibility = 'visible';
-      }
+    if (!_initBackstopRun) return;
+
+    if (event === 'SIGNED_IN' && session) {
+      clearDbCache();
+      resetMigrationPromise();
+      await refreshDbCache();
+      const migrated = await migrateLocalToSupabase();
+      if (migrated > 0) showToast('Archivo sincronizado ✓');
+      renderArchive();
+      renderScorecard();
+      updateHasEntries();
     } else if (event === 'SIGNED_OUT') {
       clearDbCache();
+      resetMigrationPromise();
+      pruneSyncedFromLocal();
       clearArchiveView();
       renderArchive();
       updateHasEntries();
@@ -473,7 +490,7 @@ function backfillLocalEntryIds() {
           analyzeImage(base64, mime),
           generateThumbnail(dataUrl),
         ]);
-        const saved = saveToArchiveDirect(result, thumbnail);
+        const saved = await saveToArchiveDirect(result, thumbnail);
         if (!saved) throw new Error('No se pudo guardar (almacenamiento lleno)');
         if (row) { row.className = 'bulk-file-item fi-ok'; row.querySelector('.fi-icon').textContent = '✓'; }
         succeeded++;
@@ -648,7 +665,7 @@ function backfillLocalEntryIds() {
     }
   });
 
-  await dbReady;
+  await refreshDbCache();
   if (currentSession) {
     const migrated = await migrateLocalToSupabase();
     if (migrated > 0) showToast('Archivo sincronizado ✓');
@@ -657,6 +674,7 @@ function backfillLocalEntryIds() {
   renderScorecard();
   updateHasEntries();
   appShell.style.visibility = 'visible';
+  _initBackstopRun = true;
 
   // ── PWA Service Worker ──
   if ('serviceWorker' in navigator) {

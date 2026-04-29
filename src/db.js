@@ -59,9 +59,10 @@ export async function saveEntry(entry) {
   try {
     const supabase = getSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
     const row = {
       id:              (() => { const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(entry.id?.toString()); return isUuid ? entry.id : crypto.randomUUID(); })(),
-      user_id:         user?.id,
+      user_id:         user.id,
       url:             entry.url             || null,
       neighborhood:    entry.neighborhood    || null,
       address:         entry.address         || null,

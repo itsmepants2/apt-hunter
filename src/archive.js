@@ -23,20 +23,34 @@ export { store } from './store.js';
 export const archiveFilter = { sort: '', colonia: '', bedrooms: '', tipo: '' };
 
 // ── Supabase entries cache ─────────────────────────────────────────────────
-// dbReady resolves once the session is confirmed and entries are fetched.
-// Callers should await dbReady before rendering data-dependent UI.
+// _dbCache shadows the signed-in user's Supabase rows. Refreshed on sign-in
+// (cold-start or same-tab) via refreshDbCache. Cleared on sign-out so the
+// signed-out render can't read another user's data.
 let _dbCache = null;
-export const dbReady = (async () => {
-  const session = await getSession();
-  if (!session) return;
-  const rows = await loadEntries();
-  if (rows.length > 0) _dbCache = rows;
-})();
 
-// Drop the in-memory shadow of Supabase rows. Called on sign-out so loadArchive
-// falls back to localStorage instead of returning the stale signed-in view.
+export async function refreshDbCache() {
+  const session = await getSession();
+  if (!session) { _dbCache = null; return; }
+  const rows = await loadEntries();
+  _dbCache = rows.length > 0 ? rows : null;
+}
+
 export function clearDbCache() {
   _dbCache = null;
+}
+
+// On sign-out, drop synced/account-private entries from localStorage and keep
+// only entries the local device hasn't successfully uploaded yet (pendingSync).
+// Account-private data lives on Supabase and re-hydrates via refreshDbCache on
+// next sign-in.
+export function pruneSyncedFromLocal() {
+  const raw = store.get('apt_hunter_archive');
+  if (!raw) return;
+  let archive;
+  try { archive = JSON.parse(raw); } catch { return; }
+  if (!Array.isArray(archive)) return;
+  const pending = archive.filter(e => e.pendingSync === true);
+  store.set('apt_hunter_archive', JSON.stringify(pending));
 }
 
 // ── Exchange rate: MXN → USD ──────────────────────────────────────────────
@@ -52,13 +66,13 @@ fetch('https://apt-hunter-proxy.stevebryant.workers.dev/fx')
 // ── Archive: persistence ──────────────────────────────────────────────────
 export function loadArchive() {
   // Cache only shadows localStorage when it holds authoritative non-empty
-  // Supabase data — match the write side at dbReady's `rows.length > 0` guard.
+  // Supabase data — match the write side at refreshDbCache's `rows.length > 0` guard.
   if (_dbCache !== null && _dbCache.length > 0) return _dbCache;
   try { return JSON.parse(store.get('apt_hunter_archive') || '[]'); }
   catch { return []; }
 }
 
-export function saveToArchiveDirect(result, thumbnail) {
+export async function saveToArchiveDirect(result, thumbnail) {
   const archive = loadArchive();
   const entry = {
     id: crypto.randomUUID(),
@@ -73,34 +87,43 @@ export function saveToArchiveDirect(result, thumbnail) {
     contactedDisplay: null,
     whatsappMessage:  result.whatsapp_message || '',
     status: 'spotted', notes: '', bedrooms: '', bathrooms: '', parking: '',
-    priceMxn: '', sizeSqm: '', neighborhood: '', amenities: '', extraPhotos: []
+    priceMxn: '', sizeSqm: '', neighborhood: '', amenities: '', extraPhotos: [],
+    pendingSync: true,
   };
   archive.unshift(entry);
   store.set('apt_hunter_archive', JSON.stringify(archive));
-  saveEntry(entry);
+  const ok = await saveEntry(entry);
+  if (ok) {
+    delete entry.pendingSync;
+    store.set('apt_hunter_archive', JSON.stringify(archive));
+  }
   renderScorecard();
   return true;
 }
 
-export function saveArchiveField(id, key, value) {
+export async function saveArchiveField(id, key, value) {
   const archive = loadArchive();
   const idx = archive.findIndex(e => e.id === id);
-  if (idx !== -1) {
-    archive[idx][key] = value;
-    store.set('apt_hunter_archive', JSON.stringify(archive));
-    saveEntry(archive[idx]);
-  }
+  if (idx === -1) return;
+  archive[idx][key] = value;
+  store.set('apt_hunter_archive', JSON.stringify(archive));
+  const ok = await saveEntry(archive[idx]);
+  if (ok) delete archive[idx].pendingSync;
+  else archive[idx].pendingSync = true;
+  store.set('apt_hunter_archive', JSON.stringify(archive));
 }
 
-export function saveArchivePhotoAdd(id, thumbDataUrl) {
+export async function saveArchivePhotoAdd(id, thumbDataUrl) {
   const archive = loadArchive();
   const idx = archive.findIndex(e => e.id === id);
-  if (idx !== -1) {
-    if (!archive[idx].extraPhotos) archive[idx].extraPhotos = [];
-    archive[idx].extraPhotos.push(thumbDataUrl);
-    store.set('apt_hunter_archive', JSON.stringify(archive));
-    saveEntry(archive[idx]);
-  }
+  if (idx === -1) return;
+  if (!archive[idx].extraPhotos) archive[idx].extraPhotos = [];
+  archive[idx].extraPhotos.push(thumbDataUrl);
+  store.set('apt_hunter_archive', JSON.stringify(archive));
+  const ok = await saveEntry(archive[idx]);
+  if (ok) delete archive[idx].pendingSync;
+  else archive[idx].pendingSync = true;
+  store.set('apt_hunter_archive', JSON.stringify(archive));
 }
 
 export function deleteArchiveEntry(id) {
@@ -135,32 +158,47 @@ export function mergeArchives(local, remote) {
   return Object.values(byId).sort((a, b) => new Date(b.date) - new Date(a.date));
 }
 
-// ── Silent localStorage → Supabase migration ──────────────────────────────
-// Two render paths in app.js (auth-state handler + end-of-init backstop) both
-// call this; the cached promise makes it run once per page load. Subsequent
-// callers resolve to 0 so they don't double-toast.
+// ── localStorage → Supabase migration / sync retry ────────────────────────
+// Runs on every sign-in. Uploads pending-sync entries, clears their flag on
+// success, leaves them flagged on failure for the next attempt. Always rewrites
+// the merged offline cache so refresh-while-signed-in still has data to render.
+// _migrationPromise dedupes within a session epoch (cleared on sign-out via
+// resetMigrationPromise so the next sign-in gets a fresh attempt).
 let _migrationPromise = null;
+
+export function resetMigrationPromise() {
+  _migrationPromise = null;
+}
+
 export function migrateLocalToSupabase() {
   if (_migrationPromise) return _migrationPromise.then(() => 0);
   _migrationPromise = (async () => {
     const raw = store.get('apt_hunter_archive');
     let local;
-    try { local = raw ? JSON.parse(raw) : []; } catch { return 0; }
-    if (!Array.isArray(local) || local.length === 0) return 0;
+    try { local = raw ? JSON.parse(raw) : []; } catch { local = []; }
+    if (!Array.isArray(local)) local = [];
 
     const remote = await loadEntries();
     const remoteIds = new Set(remote.map(e => e.id));
 
     let migrated = 0;
     for (const entry of local) {
-      if (remoteIds.has(entry.id)) continue;
+      if (remoteIds.has(entry.id)) {
+        delete entry.pendingSync;
+        continue;
+      }
       const ok = await saveEntry(entry);
-      if (ok) migrated++;
+      if (ok) {
+        migrated++;
+        delete entry.pendingSync;
+      } else {
+        entry.pendingSync = true;
+      }
     }
 
     const merged = mergeArchives(local, remote);
     store.set('apt_hunter_archive', JSON.stringify(merged));
-    _dbCache = merged;
+    _dbCache = merged.length > 0 ? merged : null;
     return migrated;
   })();
   return _migrationPromise;
