@@ -5,6 +5,7 @@ import {
   loadArchive,
   saveArchiveField,
   saveArchivePhotoAdd,
+  saveArchivePhotoDelete,
   deleteArchiveEntry,
   parsePriceMxn,
   readFileAsDataUrl,
@@ -584,19 +585,10 @@ export function clearArchiveView() {
   }
 }
 
-export function deleteArchivePhoto(entryId, photoSrc, onSuccess) {
+export async function deleteArchivePhoto(entryId, photoSrc, onSuccess) {
   if (!confirm('¿Eliminar esta foto?')) return;
-  const archive = loadArchive();
-  const e = archive.find(x => x.id === entryId);
-  if (!e) return;
-  if (e.thumbnail === photoSrc) {
-    // Promote first extra to thumbnail, or clear
-    e.thumbnail = (e.extraPhotos && e.extraPhotos.length > 0) ? e.extraPhotos.shift() : null;
-  } else {
-    e.extraPhotos = (e.extraPhotos || []).filter(s => s !== photoSrc);
-  }
-  store.set('apt_hunter_archive', JSON.stringify(archive));
-  if (onSuccess) onSuccess();
+  const changed = await saveArchivePhotoDelete(entryId, photoSrc);
+  if (changed && onSuccess) onSuccess();
 }
 
 export function makeDeleteBtn(entryId, photoSrc, onSuccess) {

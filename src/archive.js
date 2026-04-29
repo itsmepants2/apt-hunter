@@ -126,6 +126,28 @@ export async function saveArchivePhotoAdd(id, thumbDataUrl) {
   store.set('apt_hunter_archive', JSON.stringify(archive));
 }
 
+export async function saveArchivePhotoDelete(id, photoSrc) {
+  const archive = loadArchive();
+  const idx = archive.findIndex(e => e.id === id);
+  if (idx === -1) return false;
+  const isThumb = archive[idx].thumbnail === photoSrc;
+  const inExtras = (archive[idx].extraPhotos || []).includes(photoSrc);
+  if (!isThumb && !inExtras) return false;
+  if (isThumb) {
+    archive[idx].thumbnail = (archive[idx].extraPhotos && archive[idx].extraPhotos.length > 0)
+      ? archive[idx].extraPhotos.shift()
+      : null;
+  } else {
+    archive[idx].extraPhotos = archive[idx].extraPhotos.filter(s => s !== photoSrc);
+  }
+  store.set('apt_hunter_archive', JSON.stringify(archive));
+  const ok = await saveEntry(archive[idx]);
+  if (ok) delete archive[idx].pendingSync;
+  else archive[idx].pendingSync = true;
+  store.set('apt_hunter_archive', JSON.stringify(archive));
+  return true;
+}
+
 export function deleteArchiveEntry(id) {
   const archive = loadArchive().filter(e => e.id !== id);
   store.set('apt_hunter_archive', JSON.stringify(archive));

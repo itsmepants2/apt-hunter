@@ -77,7 +77,7 @@ The Level 3 shape: storage key becomes `apt_hunter_archive::guest` for unauthed 
 
 ### Photo-delete + Level 2 interaction
 
-[src/ui.js:587-600](src/ui.js:587) `deleteArchivePhoto` writes localStorage without calling `saveEntry`. Pre-Level-2 this was the long-standing "Photo delete button non-functional" issue (the deletion never propagated to Supabase). Post-Level-2 it's worse: the local entry diverges from Supabase but carries no `pendingSync` flag, so `pruneSyncedFromLocal` treats it as synced and drops it on sign-out. On the next sign-in, `refreshDbCache` re-fetches the Supabase row with the photo restored, silently undoing the user's deletion. Fix: route `deleteArchivePhoto` through a sync-tracked save path (call `saveEntry` after the local mutation, set/clear `pendingSync` on the result).
+Fixed: `deleteArchivePhoto` now routes through `saveArchivePhotoDelete` in [src/archive.js](src/archive.js), mirroring the `saveArchivePhotoAdd`/`saveArchiveField` Level-2 save pattern — local mutation → `store.set` → `await saveEntry` → toggle `pendingSync` → `store.set`. Signed-in deletes upload to Supabase so post-sign-out/sign-in cycles preserve the deletion; signed-out deletes mark `pendingSync: true` and upload on next sign-in via `migrateLocalToSupabase`. The `src/ui.js` wrapper is now a thin async confirm → delegate → onSuccess. Known limitation (out of scope, pre-existing, affects every save site equally): a signed-in `saveEntry` failure leaves `pendingSync: true` on a previously-synced entry; `migrateLocalToSupabase`'s `remoteIds.has(id)` skip drops that pending edit on next sign-in.
 
 ## Known bugs
 
