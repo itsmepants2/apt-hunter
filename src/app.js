@@ -660,7 +660,7 @@ function backfillLocalEntryIds() {
     if (galleryView.style.display === 'block' && !readPropertyParam()) {
       galleryView.style.display = 'none';
       galleryView.innerHTML = '';
-      document.getElementById('appHeader').style.display = '';
+      document.getElementById('appShell').classList.remove('gallery-open');
       document.getElementById('tabsBottom').style.display = '';
     }
   });

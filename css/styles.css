@@ -1890,6 +1890,12 @@
     #archiveView.is-active { display: block; }
     #perfilView.is-active  { display: block; }
 
+    #appShell.gallery-open #homeView,
+    #appShell.gallery-open #archiveView,
+    #appShell.gallery-open #perfilView {
+      display: none;
+    }
+
     #homeInput { width: 100%; }
 
     /* ── Home state-aware prompt ───────────────────────────────────────────── */

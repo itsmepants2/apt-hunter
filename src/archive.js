@@ -229,7 +229,7 @@ export function migrateLocalToSupabase() {
 // ── Gallery mode ───────────────────────────────────────────────────────────
 export async function initGalleryMode(propertyId) {
   const galleryView = document.getElementById('galleryView');
-  document.getElementById('appHeader').style.display = 'none';
+  document.getElementById('appShell').classList.add('gallery-open');
   document.getElementById('tabsBottom').style.display = 'none';
   galleryView.style.display = 'block';
   galleryView.innerHTML = '<p style="text-align:center;padding:48px 0;color:var(--text-muted);">Cargando…</p>';

@@ -33,6 +33,8 @@ Deferred / not done:
 
 ## Recent emergency fixes
 
+**Gallery positioning + nav visibility (SW v27).** Clicking an archive photo previously rendered `#galleryView` in normal document flow as a sibling of `#archiveView` — with the active route view still visible above, the gallery appeared below the archive list ("at the bottom of the page"). `initGalleryMode` also explicitly hid `#appHeader`, removing the only sign-out path. Switched to a page-replacement model: `initGalleryMode` now toggles a `gallery-open` class on `#appShell`, and a CSS rule keyed on `#appShell.gallery-open` hides the three route views (`#homeView`, `#archiveView`, `#perfilView`) while gallery is open. `#appHeader` is no longer hidden, so sign-out remains reachable throughout the gallery flow. All four close paths (`clearArchiveView`, `renderGallery` back-button, `renderGallery` no-photos branch, popstate handler) flip the class back and restore `#tabsBottom`. SW cache bumped to v27; CSS query string in `index.html` bumped to `?v=14`.
+
 **Level 2 account-private archive (8e1134c, SW v25, live-verified 2026-04-28).** Signed-in saves were dual-writing to Supabase + localStorage under a shared `apt_hunter_archive` key. After sign-out, `_dbCache` was cleared but localStorage still held the synced entry, so `renderArchive` re-rendered the entry against the persistence-model intent. Level 2 introduces a `pendingSync` boolean on local entries: every save site (`savePreviewEntry`, `saveToArchiveDirect`, `saveArchiveField`, `saveArchivePhotoAdd`) now writes optimistically with `pendingSync: true`, awaits `saveEntry()`, and clears the flag on confirmed Supabase success. On sign-out, `pruneSyncedFromLocal()` keeps only `pendingSync === true` entries so synced rows leave with the account while pending/local-only data survives for the next sign-in. `migrateLocalToSupabase` clears the flag on confirmed upload (via either `remoteIds.has(id)` or a truthy `saveEntry` return) and never produces duplicate rows because of stable UUIDs (49b937d) plus the `remoteIds` skip. The one-shot `dbReady` IIFE was replaced by a callable `refreshDbCache()` so each sign-in (cold-start or post-OAuth) re-fetches Supabase rows; the auth listener is now event-explicit (`SIGNED_IN`/`SIGNED_OUT`) and gated on a new `_initBackstopRun` flag so cold-start work isn't double-run. `saveEntry` early-returns null when no user is signed in, giving callers an honest success/failure signal. SW cache bumped to v25.
 
 Live verification (8e1134c, 2026-04-28):
@@ -96,7 +98,7 @@ Needs Steve confirmation on which (if any) are still live.
 
 ## Service worker cache version
 
-**`mis-niditos-v25`** — verified from `sw.js:1`. Bumped from v24 with the Level 2 account-private archive change (touches `app.js`, `archive.js`, `db.js`).
+**`mis-niditos-v27`** — verified from `sw.js:1`. Bumped from v26 with the gallery positioning / nav-visibility fix (touches `archive.js`, `ui.js`, `app.js`, `styles.css`, `index.html`). Prior bump v25 → v26 with the photo-delete persistence fix (b95b051).
 
 Note: SW cache bumps don't take effect until old controllers terminate. After a bump, close all Apt Hunter tabs (especially on iOS Safari) before re-verifying.
 
